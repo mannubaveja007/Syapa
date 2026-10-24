@@ -1,3 +1,8 @@
+import dotenv from "dotenv";
+import path from "node:path";
+dotenv.config();
+dotenv.config({ path: path.resolve(__dirname, "../../../.env") });
+
 export interface EmbeddingsOptions {
   timeoutMs?: number;
   retries?: number;
@@ -14,7 +19,7 @@ export class EmbeddingsClient {
 
   constructor() {
     this.baseUrl = (process.env.EMBED_BASE_URL || "https://openrouter.ai/api/v1").replace(/\/+$/, "");
-    this.apiKey = process.env.EMBED_API_KEY || "";
+    this.apiKey = process.env.EMBED_API_KEY || process.env.OPENROUTER_API_KEY || "";
     this.model = process.env.EMBED_MODEL || "openai/text-embedding-3-small";
     this.dimension = Number(process.env.EMBED_DIM) || REQUIRED_EMBED_DIM;
     this.defaultTimeout = 30000;

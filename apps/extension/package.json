@@ -3,9 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "wxt",
-    "build": "wxt build",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "echo 'Plain MV3 extension: 0 build step, native loading'"
   },
   "dependencies": {
     "idb-keyval": "^6.2.1",

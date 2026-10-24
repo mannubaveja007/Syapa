@@ -1,3 +1,8 @@
+import dotenv from "dotenv";
+import path from "node:path";
+dotenv.config();
+dotenv.config({ path: path.resolve(__dirname, "../../../.env") });
+
 import { z } from "zod";
 
 export interface LLMMessage {
@@ -59,7 +64,7 @@ export class LLMClient {
 
   constructor() {
     this.baseUrl = (process.env.LLM_BASE_URL || "https://openrouter.ai/api/v1").replace(/\/+$/, "");
-    this.apiKey = process.env.LLM_API_KEY || "";
+    this.apiKey = process.env.LLM_API_KEY || process.env.OPENROUTER_API_KEY || "";
     this.model = process.env.LLM_MODEL || "google/gemma-2-9b-it:free";
     const fallbacks = process.env.LLM_FALLBACK_MODELS || "meta-llama/llama-3.3-70b-instruct:free,mistralai/mistral-7b-instruct:free";
     this.fallbackModels = fallbacks.split(",").map((m) => m.trim()).filter(Boolean);

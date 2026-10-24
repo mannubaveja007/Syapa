@@ -16,6 +16,7 @@
     "push": "prisma db push",
     "reembed": "tsx src/scripts/reembed.ts",
     "seed": "tsx src/scripts/seed.ts",
+    "clear:demo": "tsx src/scripts/clear-demo.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
