@@ -78,7 +78,7 @@ export default function MeetingDetailPage() {
   const [meeting, setMeeting] = useState<MeetingDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [ending, setEnding] = useState(false);
-  const [activeTab, setActiveTab] = useState<"analysis" | "transcript">("analysis");
+  const [activeTab, setActiveTab] = useState<"analysis" | "transcript" | "agent">("analysis");
 
   const fetchMeeting = async () => {
     try {
@@ -241,6 +241,20 @@ export default function MeetingDetailPage() {
           <span>Full transcript</span>
           <span className="px-1.5 py-0.5 rounded text-[10px] bg-surface-subtle border border-border text-muted">
             {meeting.segments.length} segments
+          </span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab("agent")}
+          className={`pb-3 text-xs font-medium border-b-2 transition-colors active:opacity-80 focus-visible:ring-2 flex items-center gap-2 ${
+            activeTab === "agent"
+              ? "border-foreground text-foreground"
+              : "border-transparent text-muted hover:text-foreground"
+          }`}
+        >
+          <span>Voice sparring agent</span>
+          <span className="px-1.5 py-0.5 rounded text-[10px] bg-accent/10 border border-accent/30 text-accent font-mono">
+            ElevenLabs
           </span>
         </button>
       </div>
@@ -500,6 +514,87 @@ export default function MeetingDetailPage() {
               ))}
             </div>
           )}
+        </div>
+      )}
+
+      {/* TAB 3: VOICE SPARRING AGENT */}
+      {activeTab === "agent" && (
+        <div className="space-y-6">
+          <div className="border border-border rounded-lg bg-surface p-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-border mb-6">
+              <div>
+                <span className="text-[10px] font-mono uppercase tracking-widest text-accent mb-1 block">
+                  Conversational AI Voice Agent
+                </span>
+                <h2 className="text-base font-semibold text-foreground tracking-tight">
+                  Spar Against Mr Sharma (Coaching Center Scope Creeper)
+                </h2>
+                <p className="text-xs text-muted mt-1 max-w-xl">
+                  Simulate real-time voice pushback before your live client calls. Powered by the official ElevenLabs Conversational AI SDK.
+                </p>
+              </div>
+
+              <Link
+                href={`/practice?meetingId=${meeting.id}&persona=mr_sharma`}
+                className="bg-accent text-accent-foreground px-4 py-2 rounded-md text-xs font-semibold hover:opacity-90 active:opacity-80 focus-visible:ring-2 inline-flex items-center gap-2 shrink-0"
+              >
+                <Play className="w-3.5 h-3.5 fill-current" />
+                <span>Launch live voice sparring</span>
+              </Link>
+            </div>
+
+            {/* PERSONA BRIEF CARD */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              <div className="p-4 rounded-md border border-border bg-surface-subtle">
+                <span className="text-[10px] text-muted block mb-1">Client Profile</span>
+                <span className="text-xs font-semibold text-foreground block mb-0.5">Mr Sharma</span>
+                <span className="text-[11px] text-muted">Runs a Class 9-12 Coaching Center</span>
+              </div>
+
+              <div className="p-4 rounded-md border border-border bg-surface-subtle">
+                <span className="text-[10px] text-muted block mb-1">Financial Parameters</span>
+                <span className="text-xs font-semibold text-foreground block mb-0.5">Stated: ₹12,000</span>
+                <span className="text-[11px] text-amber-500 font-mono">Hard Ceiling: ₹15,000</span>
+              </div>
+
+              <div className="p-4 rounded-md border border-border bg-surface-subtle">
+                <span className="text-[10px] text-muted block mb-1">Simulation Difficulty</span>
+                <span className="text-xs font-semibold text-foreground block mb-0.5">Level 2 (Aggressive Creep)</span>
+                <span className="text-[11px] text-muted">Subtle incremental scope demands</span>
+              </div>
+            </div>
+
+            {/* HIDDEN ASKS DETECTED */}
+            <div className="p-4 rounded-md border border-border bg-surface-subtle mb-6">
+              <div className="flex items-center gap-2 mb-2">
+                <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
+                <span className="text-xs font-semibold text-foreground">
+                  Client Hidden Asks (Unbudgeted Scope Traps)
+                </span>
+              </div>
+              <ul className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <li className="text-[11px] text-muted border border-border/80 bg-surface px-3 py-1.5 rounded">
+                  • Online student fee payment gateway
+                </li>
+                <li className="text-[11px] text-muted border border-border/80 bg-surface px-3 py-1.5 rounded">
+                  • Student login portal for PDF notes
+                </li>
+                <li className="text-[11px] text-muted border border-border/80 bg-surface px-3 py-1.5 rounded">
+                  • Full bilingual Hindi / English version
+                </li>
+              </ul>
+            </div>
+
+            {/* PROJECT BRIEF INJECTED */}
+            <div className="border border-border/60 rounded-md p-4 bg-surface">
+              <span className="text-[10px] text-muted uppercase tracking-wider block mb-2 font-medium">
+                Injected Grounded Project Brief (&lt; 500 words)
+              </span>
+              <p className="text-xs text-foreground leading-relaxed italic bg-surface-subtle p-3 rounded border border-border">
+                “Mr Sharma runs a coaching center for class 9 to 12 and wants a simple website with courses, teachers, results and a contact form. His stated budget is ₹12,000. He has not mentioned hosting or maintenance.”
+              </p>
+            </div>
+          </div>
         </div>
       )}
     </div>

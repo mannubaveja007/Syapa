@@ -42,6 +42,18 @@ interface SessionData {
 
 const ARCHETYPES = [
   {
+    id: "mr_sharma",
+    title: "Mr Sharma (Coaching Center)",
+    clientName: "Mr Sharma",
+    freelancerName: "Mannu",
+    tag: "Scope Creeper",
+    difficulty: 2,
+    budgetCeiling: "₹15,000",
+    hiddenAsks: ["online fee payment", "student login for notes", "Hindi version"],
+    description: "Runs a class 9-12 coaching center. Wants a simple website with courses, teachers, results and contact form for ₹12,000, then pushes for student portals, fee payment, and Hindi localization without hosting.",
+    defaultBrief: "Mr Sharma runs a coaching center for class 9 to 12 and wants a simple website with courses, teachers, results and a contact form. His stated budget is ₹12,000. He has not mentioned hosting.",
+  },
+  {
     id: "scope_creep_ceo",
     title: "Scope Creep CEO",
     tag: "Feature creep",

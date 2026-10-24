@@ -11,6 +11,7 @@ async function clearDemo() {
     where: {
       OR: [
         { metadata: { path: ["isDemo"], equals: true } },
+        { metadata: { path: ["source"], equals: "v0-demo" } },
         { title: { contains: "[Demo]" } },
         { title: { in: [
           "Launch planning sync",
