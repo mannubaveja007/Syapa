@@ -1,0 +1,72 @@
+/* Hallmark · v2.0.0 | genre: modern-minimal | theme: editorial-slate */
+/* critique: clean tokens, high contrast, balanced typography */
+
+:root {
+  --background: #fbfbfb;
+  --foreground: #121316;
+  
+  --surface: #ffffff;
+  --surface-subtle: #f4f4f6;
+  --surface-muted: #ebebee;
+  
+  --border: #e2e2e6;
+  --input: #dcdcde;
+  --ring: #121316;
+  
+  --primary: #121316;
+  --primary-foreground: #ffffff;
+  --primary-hover: #27272a;
+  
+  --secondary: #f0f0f3;
+  --secondary-foreground: #18181b;
+  
+  --muted: #64646e;
+  --muted-foreground: #71717a;
+  
+  --accent: #2563eb;
+  --accent-foreground: #ffffff;
+  
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
+  
+  --card: #ffffff;
+  --card-foreground: #121316;
+  
+  --radius: 8px;
+  
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+:root[data-theme="dark"],
+.dark {
+  --background: #09090b;
+  --foreground: #f4f4f5;
+  
+  --surface: #121215;
+  --surface-subtle: #18181c;
+  --surface-muted: #222227;
+  
+  --border: #27272a;
+  --input: #2f2f35;
+  --ring: #f4f4f5;
+  
+  --primary: #f4f4f5;
+  --primary-foreground: #09090b;
+  --primary-hover: #e4e4e7;
+  
+  --secondary: #1e1e24;
+  --secondary-foreground: #f4f4f5;
+  
+  --muted: #94949e;
+  --muted-foreground: #a1a1aa;
+  
+  --accent: #2c68e8;
+  --accent-foreground: #ffffff;
+  
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  
+  --card: #121215;
+  --card-foreground: #f4f4f5;
+}
