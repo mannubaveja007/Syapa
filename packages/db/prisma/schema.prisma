@@ -1,0 +1,194 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  directUrl  = env("DIRECT_URL")
+  extensions = [pgvector(map: "vector")]
+}
+
+model User {
+  id                 String              @id @default(cuid())
+  name               String?
+  email              String              @unique
+  emailVerified      Boolean             @default(false)
+  image              String?
+  passwordHash       String?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  sessions           Session[]
+  accounts           Account[]
+  apiTokens          ApiToken[]
+  meetings           Meeting[]
+  projectContexts    ProjectContext[]
+  documentChunks     DocumentChunk[]
+  simulationSessions SimulationSession[]
+  scorecards         Scorecard[]
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  expiresAt DateTime
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Account {
+  id                    String    @id @default(cuid())
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accountId             String
+  providerId            String
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+}
+
+model Verification {
+  id         String   @id @default(cuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model ApiToken {
+  id         String    @id @default(cuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name       String    @default("Chrome Extension")
+  token      String    @unique
+  lastUsedAt DateTime?
+  expiresAt  DateTime?
+  createdAt  DateTime  @default(now())
+}
+
+model Meeting {
+  id                 String               @id @default(cuid())
+  userId             String
+  user               User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title              String               @default("Untitled Meeting")
+  status             String               @default("RECORDING") // RECORDING, PROCESSING, COMPLETED, FAILED
+  startTime          DateTime             @default(now())
+  endTime            DateTime?
+  durationSeconds    Int                  @default(0)
+  summary            String?              @db.Text
+  actionItems        Json?
+  requestedWork      Json?
+  droppedQuotesCount Int                  @default(0)
+  metadata           Json?
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  segments           TranscriptSegment[]
+  chunks             DocumentChunk[]
+}
+
+model TranscriptSegment {
+  id          String   @id @default(cuid())
+  meetingId   String
+  meeting     Meeting  @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  speaker     String   // "You" | "Others"
+  text        String   @db.Text
+  startTimeMs Int
+  endTimeMs   Int
+  createdAt   DateTime @default(now())
+
+  @@index([meetingId, startTimeMs])
+}
+
+model ProjectContext {
+  id        String          @id @default(cuid())
+  userId    String
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  type      String          // "BRIEF" | "CHAT"
+  content   String          @db.Text
+  metadata  Json?
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+  chunks    DocumentChunk[]
+}
+
+model DocumentChunk {
+  id               String                  @id @default(cuid())
+  userId           String
+  user             User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  meetingId        String?
+  meeting          Meeting?                @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  projectContextId String?
+  projectContext   ProjectContext?         @relation(fields: [projectContextId], references: [id], onDelete: Cascade)
+  contextType      String                  // "BRIEF" | "CHAT" | "MEETING_CHUNK"
+  chunkIndex       Int                     @default(0)
+  content          String                  @db.Text
+  metadata         Json?
+  embedding        Unsupported("vector")?
+  searchVector     Unsupported("tsvector")?
+  createdAt        DateTime                @default(now())
+
+  @@index([userId, contextType])
+}
+
+model SimulationSession {
+  id            String           @id @default(cuid())
+  userId        String
+  user          User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  persona       String
+  difficulty    Int              @default(1)
+  status        String           @default("ACTIVE") // ACTIVE, COMPLETED
+  patience      Int              @default(100)
+  trust         Int              @default(100)
+  budgetCeiling Float            @default(5000)
+  hiddenAsks    Json             // string[]
+  briefId       String?
+  chatLogId     String?
+  meetingIds    Json?            // string[]
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  turns         SimulationTurn[]
+  scorecard     Scorecard?
+}
+
+model SimulationTurn {
+  id               String            @id @default(cuid())
+  sessionId        String
+  session          SimulationSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  role             String            // "user" | "client"
+  content          String            @db.Text
+  hiddenStateDelta Json?
+  rawResponse      Json?
+  turnIndex        Int
+  createdAt        DateTime          @default(now())
+
+  @@index([sessionId, turnIndex])
+}
+
+model Scorecard {
+  id              String            @id @default(cuid())
+  sessionId       String            @unique
+  session         SimulationSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  userId          String
+  user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  overallScore    Int
+  summary         String            @db.Text
+  freeConcessions Json
+  boundariesHeld  Json
+  priceAnchoring  Json
+  vaguePromises   Json
+  rewrites        Json
+  createdAt       DateTime          @default(now())
+}
