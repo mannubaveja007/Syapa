@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@elevenlabs/react": "^1.19.1",
     "@syapa/ai": "workspace:*",
     "@syapa/db": "workspace:*",
     "@syapa/shared": "workspace:*",

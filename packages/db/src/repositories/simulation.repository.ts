@@ -11,6 +11,8 @@ export interface CreateSimulationParams {
   briefId?: string;
   chatLogId?: string;
   meetingIds?: string[];
+  channel?: "TEXT" | "VOICE";
+  elevenlabsConversationId?: string;
 }
 
 export interface AddTurnParams {
@@ -48,6 +50,17 @@ export class SimulationRepository {
         briefId: params.briefId,
         chatLogId: params.chatLogId,
         meetingIds: params.meetingIds || [],
+        channel: params.channel || "TEXT",
+        elevenlabsConversationId: params.elevenlabsConversationId,
+      },
+    });
+  }
+
+  static async updateVoiceSession(sessionId: string, elevenlabsConversationId: string) {
+    return prisma.simulationSession.update({
+      where: { id: sessionId },
+      data: {
+        elevenlabsConversationId,
       },
     });
   }
