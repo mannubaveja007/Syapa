@@ -22,6 +22,15 @@ export interface SaveMeetingAnalysisParams {
   actionItems: string[];
   requestedWork: any[];
   riskyCommitments?: any[];
+  patterns?: any[];
+  suggestions?: Array<{
+    title: string;
+    description: string;
+    category: string;
+    exactQuote?: string | null;
+    recommendedAction: string;
+    priority?: number;
+  }>;
   droppedQuotesCount: number;
 }
 
@@ -47,6 +56,28 @@ export class MeetingRepository {
         segments: {
           orderBy: { startTimeMs: "asc" },
         },
+        analysis: {
+          include: {
+            suggestions: {
+              orderBy: { priority: "asc" },
+            },
+          },
+        },
+      },
+    });
+  }
+
+  static async getPastCompletedMeetings(userId: string, excludeMeetingId: string, limit = 3) {
+    return prisma.meeting.findMany({
+      where: {
+        userId,
+        id: { not: excludeMeetingId },
+        status: "COMPLETED",
+      },
+      orderBy: { createdAt: "desc" },
+      take: limit,
+      include: {
+        analysis: true,
       },
     });
   }
@@ -94,7 +125,8 @@ export class MeetingRepository {
   }
 
   static async saveMeetingAnalysis(params: SaveMeetingAnalysisParams) {
-    return prisma.meeting.update({
+    // 1. Update Meeting overview
+    await prisma.meeting.update({
       where: { id: params.meetingId },
       data: {
         status: "COMPLETED",
@@ -103,6 +135,63 @@ export class MeetingRepository {
         requestedWork: params.requestedWork,
         riskyCommitments: params.riskyCommitments || [],
         droppedQuotesCount: params.droppedQuotesCount,
+      },
+    });
+
+    // 2. Clear existing suggestions if re-running
+    const existingAnalysis = await prisma.meetingAnalysis.findUnique({
+      where: { meetingId: params.meetingId },
+    });
+    if (existingAnalysis) {
+      await prisma.suggestion.deleteMany({
+        where: { meetingAnalysisId: existingAnalysis.id },
+      });
+    }
+
+    // 3. Upsert MeetingAnalysis and Suggestions
+    return prisma.meetingAnalysis.upsert({
+      where: { meetingId: params.meetingId },
+      create: {
+        meetingId: params.meetingId,
+        summary: params.summary,
+        actionItems: params.actionItems,
+        requestedWork: params.requestedWork,
+        riskyCommitments: params.riskyCommitments || [],
+        patterns: params.patterns || [],
+        droppedQuotesCount: params.droppedQuotesCount,
+        suggestions: {
+          create: (params.suggestions || []).map((s, idx) => ({
+            title: s.title,
+            description: s.description,
+            category: s.category,
+            exactQuote: s.exactQuote || null,
+            recommendedAction: s.recommendedAction,
+            priority: s.priority ?? idx + 1,
+          })),
+        },
+      },
+      update: {
+        summary: params.summary,
+        actionItems: params.actionItems,
+        requestedWork: params.requestedWork,
+        riskyCommitments: params.riskyCommitments || [],
+        patterns: params.patterns || [],
+        droppedQuotesCount: params.droppedQuotesCount,
+        suggestions: {
+          create: (params.suggestions || []).map((s, idx) => ({
+            title: s.title,
+            description: s.description,
+            category: s.category,
+            exactQuote: s.exactQuote || null,
+            recommendedAction: s.recommendedAction,
+            priority: s.priority ?? idx + 1,
+          })),
+        },
+      },
+      include: {
+        suggestions: {
+          orderBy: { priority: "asc" },
+        },
       },
     });
   }

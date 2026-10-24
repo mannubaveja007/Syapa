@@ -97,6 +97,37 @@ model Meeting {
   updatedAt          DateTime             @updatedAt
   segments           TranscriptSegment[]
   chunks             DocumentChunk[]
+  analysis           MeetingAnalysis?
+}
+
+model MeetingAnalysis {
+  id                 String       @id @default(cuid())
+  meetingId          String       @unique
+  meeting            Meeting      @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  summary            String       @db.Text
+  actionItems        Json?
+  requestedWork      Json?
+  riskyCommitments   Json?
+  patterns           Json?
+  droppedQuotesCount Int          @default(0)
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+  suggestions        Suggestion[]
+}
+
+model Suggestion {
+  id                String          @id @default(cuid())
+  meetingAnalysisId String
+  meetingAnalysis   MeetingAnalysis @relation(fields: [meetingAnalysisId], references: [id], onDelete: Cascade)
+  title             String
+  description       String          @db.Text
+  category          String          // "SCOPE_BOUNDARY" | "PRICE_ANCHOR" | "PROCESS_AGREEMENT" | "FOLLOW_UP"
+  exactQuote        String?         @db.Text
+  recommendedAction String          @db.Text
+  priority          Int             @default(1)
+  createdAt         DateTime        @default(now())
+
+  @@index([meetingAnalysisId])
 }
 
 model TranscriptSegment {
@@ -157,13 +188,15 @@ model SimulationSession {
   trust         Int              @default(100)
   budgetCeiling Float            @default(5000)
   hiddenAsks    Json             // string[]
-  briefId       String?
-  chatLogId     String?
-  meetingIds    Json?            // string[]
-  createdAt     DateTime         @default(now())
-  updatedAt     DateTime         @updatedAt
-  turns         SimulationTurn[]
-  scorecard     Scorecard?
+  briefId                  String?
+  chatLogId                String?
+  meetingIds               Json?            // string[]
+  channel                  String           @default("TEXT") // "TEXT" | "VOICE"
+  elevenlabsConversationId String?
+  createdAt                DateTime         @default(now())
+  updatedAt                DateTime         @updatedAt
+  turns                    SimulationTurn[]
+  scorecard                Scorecard?
 }
 
 model SimulationTurn {

@@ -8,6 +8,26 @@ interface TranscriptSegment {
   endTimeMs: number;
 }
 
+interface SuggestionItem {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  exactQuote: string;
+  recommendedAction: string;
+  priority: number;
+}
+
+interface AnalysisData {
+  status: string;
+  summary?: string | null;
+  analysis?: {
+    summary?: string;
+    patterns?: string[];
+    suggestions?: SuggestionItem[];
+  } | null;
+}
+
 export function App() {
   const [mode, setMode] = useState<"idle" | "recording" | "ended">("idle");
   const [apiToken, setApiToken] = useState("");
@@ -20,6 +40,8 @@ export function App() {
   const [tabVolume, setTabVolume] = useState(0);
   const [error, setError] = useState("");
   const [consentAcknowledged, setConsentAcknowledged] = useState(false);
+  const [analysisData, setAnalysisData] = useState<AnalysisData | null>(null);
+  const [isPollingAnalysis, setIsPollingAnalysis] = useState(false);
 
   const transcriptEndRef = useRef<HTMLDivElement>(null);
 
@@ -64,6 +86,50 @@ export function App() {
     transcriptEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [segments, partialTranscript]);
 
+  // Poll for post-meeting analysis when recording ends
+  useEffect(() => {
+    if (mode !== "ended" || !currentMeetingId) return;
+
+    let isMounted = true;
+    let pollAttempts = 0;
+    setIsPollingAnalysis(true);
+
+    const checkAnalysis = async () => {
+      try {
+        const res = await fetch(`http://localhost:3000/api/meetings/${currentMeetingId}`, {
+          headers: {
+            "x-api-token": apiToken.trim(),
+          },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (isMounted && data.meeting) {
+            setAnalysisData(data.meeting);
+            if (data.meeting.status === "COMPLETED" || data.meeting.analysis) {
+              setIsPollingAnalysis(false);
+              return;
+            }
+          }
+        }
+      } catch {
+        // Retry silently
+      }
+
+      pollAttempts++;
+      if (pollAttempts < 30 && isMounted) {
+        setTimeout(checkAnalysis, 2500);
+      } else if (isMounted) {
+        setIsPollingAnalysis(false);
+      }
+    };
+
+    checkAnalysis();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [mode, currentMeetingId, apiToken]);
+
   const saveApiToken = (token: string) => {
     setApiToken(token);
     chrome.storage.local.set({ syapa_api_token: token });
@@ -99,6 +165,7 @@ export function App() {
       setCurrentMeetingId(meeting.id);
       setSegments([]);
       setElapsedSeconds(0);
+      setAnalysisData(null);
 
       // 2. Instruct background script to start tab capture
       chrome.runtime.sendMessage(
@@ -311,26 +378,106 @@ export function App() {
 
       {/* ENDED VIEW */}
       {mode === "ended" && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-          <div style={{ padding: 16, borderRadius: "var(--radius)", backgroundColor: "var(--surface)", border: "1px solid var(--border)", textAlign: "center" }}>
-            <CheckCircle2 size={32} color="var(--success)" style={{ margin: "0 auto 8px" }} />
-            <h3 style={{ fontSize: 14, fontWeight: 600, marginBottom: 4 }}>Meeting Recorded</h3>
-            <p style={{ fontSize: 11, color: "var(--muted)", lineHeight: 1.4, marginBottom: 12 }}>
-              Audio streams committed and flushed to Syapa. Post-meeting pipeline is analyzing summary, action items, and scope requests.
+        <div style={{ display: "flex", flexDirection: "column", gap: 12, overflowY: "auto", flex: 1 }}>
+          <div style={{ padding: 14, borderRadius: "var(--radius)", backgroundColor: "var(--surface)", border: "1px solid var(--border)", textAlign: "center" }}>
+            <CheckCircle2 size={24} color="var(--success)" style={{ margin: "0 auto 6px" }} />
+            <h3 style={{ fontSize: 13, fontWeight: 600, marginBottom: 2 }}>Meeting Recorded</h3>
+            <p style={{ fontSize: 11, color: "var(--muted)", lineHeight: 1.4, margin: 0 }}>
+              Audio streams flushed. {segments.length} dialogue segments recorded.
             </p>
-            <span style={{ display: "inline-block", fontSize: 10, fontFamily: "var(--font-mono)", padding: "2px 8px", borderRadius: 4, backgroundColor: "var(--surface-subtle)", border: "1px solid var(--border)", color: "var(--muted)" }}>
-              {segments.length} segments saved
-            </span>
           </div>
+
+          {/* AI ANALYSIS STATUS / SUMMARY */}
+          {isPollingAnalysis && !analysisData?.analysis && !analysisData?.summary && (
+            <div style={{ padding: 12, borderRadius: "var(--radius)", backgroundColor: "var(--surface)", border: "1px solid var(--border)", display: "flex", alignItems: "center", gap: 8 }}>
+              <RefreshCw size={13} color="var(--accent)" />
+              <div style={{ fontSize: 11, color: "var(--muted)" }}>
+                Generating summary and tactical suggestions…
+              </div>
+            </div>
+          )}
+
+          {/* EXECUTIVE SUMMARY */}
+          {(analysisData?.analysis?.summary || analysisData?.summary) && (
+            <div style={{ padding: 12, borderRadius: "var(--radius)", backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
+              <span style={{ fontSize: 10, fontFamily: "var(--font-mono)", color: "var(--muted)", display: "block", marginBottom: 4 }}>
+                EXECUTIVE SUMMARY
+              </span>
+              <p style={{ fontSize: 11, color: "var(--fg)", lineHeight: 1.5, margin: 0 }}>
+                {analysisData.analysis?.summary || analysisData.summary}
+              </p>
+            </div>
+          )}
+
+          {/* TOP 3 SUGGESTIONS */}
+          {analysisData?.analysis?.suggestions && analysisData.analysis.suggestions.length > 0 && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <span style={{ fontSize: 10, fontFamily: "var(--font-mono)", color: "var(--muted)" }}>
+                  TOP SUGGESTIONS
+                </span>
+                <span style={{ fontSize: 10, fontFamily: "var(--font-mono)", color: "var(--accent)" }}>
+                  {Math.min(3, analysisData.analysis.suggestions.length)} OF {analysisData.analysis.suggestions.length}
+                </span>
+              </div>
+
+              {analysisData.analysis.suggestions.slice(0, 3).map((s) => (
+                <div
+                  key={s.id}
+                  style={{
+                    padding: 10,
+                    borderRadius: "var(--radius)",
+                    backgroundColor: "var(--surface)",
+                    border: "1px solid var(--border)",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 4,
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 6 }}>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: "var(--fg)" }}>
+                      {s.title}
+                    </span>
+                    <span
+                      style={{
+                        fontSize: 9,
+                        fontFamily: "var(--font-mono)",
+                        padding: "1px 5px",
+                        borderRadius: 3,
+                        backgroundColor: "var(--surface-subtle)",
+                        border: "1px solid var(--border)",
+                        color: "var(--muted)",
+                        flexShrink: 0,
+                      }}
+                    >
+                      {s.category}
+                    </span>
+                  </div>
+
+                  {s.exactQuote && (
+                    <p style={{ fontSize: 10, color: "var(--muted)", fontStyle: "italic", margin: 0, lineHeight: 1.4 }}>
+                      “{s.exactQuote}”
+                    </p>
+                  )}
+
+                  <div style={{ fontSize: 10, color: "var(--fg)", backgroundColor: "var(--surface-subtle)", padding: "4px 6px", borderRadius: 3, marginTop: 2, display: "flex", alignItems: "flex-start", gap: 4 }}>
+                    <span style={{ color: "var(--accent)", fontWeight: 600, flexShrink: 0 }}>Action:</span>
+                    <span>{s.recommendedAction}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
 
           {currentMeetingId && (
             <a
               href={`http://localhost:3000/meetings/${currentMeetingId}`}
               target="_blank"
               rel="noreferrer"
+              className="nowrap"
               style={{ width: "100%", padding: "10px", backgroundColor: "var(--fg)", color: "var(--bg)", borderRadius: "var(--radius)", textDecoration: "none", fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}
             >
-              <span>Open Meeting in Web App</span>
+              <span>Open Full Analysis</span>
               <ExternalLink size={14} />
             </a>
           )}
@@ -339,7 +486,9 @@ export function App() {
             onClick={() => {
               setMode("idle");
               setSegments([]);
+              setAnalysisData(null);
             }}
+            className="nowrap"
             style={{ width: "100%", padding: "8px", backgroundColor: "transparent", border: "1px solid var(--border)", color: "var(--fg)", borderRadius: "var(--radius)", cursor: "pointer" }}
           >
             Record Another Meeting

@@ -26,6 +26,33 @@ interface RiskyCommitmentItem {
   recommendedReply: string;
 }
 
+interface SuggestionItem {
+  id?: string;
+  title: string;
+  description: string;
+  category: string;
+  exactQuote?: string | null;
+  recommendedAction: string;
+  priority: number;
+}
+
+interface PatternItem {
+  pattern: string;
+  risk: string;
+  advice: string;
+}
+
+interface MeetingAnalysisDetail {
+  id: string;
+  summary: string;
+  actionItems?: string[] | null;
+  requestedWork?: RequestedWorkItem[] | null;
+  riskyCommitments?: RiskyCommitmentItem[] | null;
+  patterns?: PatternItem[] | null;
+  suggestions?: SuggestionItem[] | null;
+  droppedQuotesCount: number;
+}
+
 interface MeetingDetail {
   id: string;
   title: string;
@@ -40,6 +67,7 @@ interface MeetingDetail {
   droppedQuotesCount: number;
   createdAt: string;
   segments: Segment[];
+  analysis?: MeetingAnalysisDetail | null;
 }
 
 export default function MeetingDetailPage() {
@@ -50,6 +78,7 @@ export default function MeetingDetailPage() {
   const [meeting, setMeeting] = useState<MeetingDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [ending, setEnding] = useState(false);
+  const [activeTab, setActiveTab] = useState<"analysis" | "transcript">("analysis");
 
   const fetchMeeting = async () => {
     try {
@@ -183,161 +212,296 @@ export default function MeetingDetailPage() {
         </div>
       </div>
 
-      {/* POST-MEETING ANALYSIS (IF COMPLETED) */}
-      {meeting.status === "COMPLETED" && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-          {/* SUMMARY */}
-          <div className="md:col-span-2 border border-border rounded-lg bg-surface p-5">
-            <h2 className="text-xs text-muted mb-3 font-medium">AI executive summary</h2>
-            <p className="text-xs text-foreground leading-relaxed whitespace-pre-line">
-              {meeting.summary || "No summary generated."}
-            </p>
-          </div>
+      {/* TABS: ANALYSIS vs TRANSCRIPT */}
+      <div className="flex items-center gap-6 border-b border-border mb-8">
+        <button
+          onClick={() => setActiveTab("analysis")}
+          className={`pb-3 text-xs font-medium border-b-2 transition-colors active:opacity-80 focus-visible:ring-2 flex items-center gap-2 ${
+            activeTab === "analysis"
+              ? "border-foreground text-foreground"
+              : "border-transparent text-muted hover:text-foreground"
+          }`}
+        >
+          <span>Analysis</span>
+          {meeting.analysis?.suggestions && meeting.analysis.suggestions.length > 0 && (
+            <span className="px-1.5 py-0.5 rounded text-[10px] bg-surface-subtle border border-border text-foreground">
+              {meeting.analysis.suggestions.length}
+            </span>
+          )}
+        </button>
 
-          {/* ACTION ITEMS */}
-          <div className="border border-border rounded-lg bg-surface p-5">
-            <h2 className="text-xs text-muted mb-3 font-medium">Action items</h2>
-            {meeting.actionItems && Array.isArray(meeting.actionItems) && meeting.actionItems.length > 0 ? (
-              <ul className="space-y-2">
-                {meeting.actionItems.map((item, idx) => (
-                  <li key={idx} className="flex items-start gap-2 text-xs text-foreground">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-accent shrink-0 mt-0.5" />
-                    <span>{item}</span>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-xs text-muted">No action items flagged.</p>
-            )}
-          </div>
-        </div>
-      )}
+        <button
+          onClick={() => setActiveTab("transcript")}
+          className={`pb-3 text-xs font-medium border-b-2 transition-colors active:opacity-80 focus-visible:ring-2 flex items-center gap-2 ${
+            activeTab === "transcript"
+              ? "border-foreground text-foreground"
+              : "border-transparent text-muted hover:text-foreground"
+          }`}
+        >
+          <span>Full transcript</span>
+          <span className="px-1.5 py-0.5 rounded text-[10px] bg-surface-subtle border border-border text-muted">
+            {meeting.segments.length} segments
+          </span>
+        </button>
+      </div>
 
-      {/* REQUESTED WORK LIST WITH VERIFIED QUOTES */}
-      {meeting.status === "COMPLETED" && meeting.requestedWork && meeting.requestedWork.length > 0 && (
-        <div className="border border-border rounded-lg bg-surface p-5 mb-10">
-          <div className="flex items-center justify-between pb-3 border-b border-border mb-4">
-            <div>
-              <h2 className="text-sm font-semibold text-foreground">
-                Extracted Work Requests & Scope Creep
-              </h2>
-              <p className="text-xs text-muted">
-                Every task is strictly grounded with exact quotes from the transcript.
+      {/* TAB 1: ANALYSIS */}
+      {activeTab === "analysis" && (
+        <div className="space-y-10">
+          {meeting.status !== "COMPLETED" && (
+            <div className="border border-border rounded-lg bg-surface p-8 text-center">
+              <h3 className="text-sm font-semibold text-foreground mb-1">
+                Analysis in progress
+              </h3>
+              <p className="text-xs text-muted max-w-md mx-auto">
+                Once the meeting is concluded, the intelligence pipeline extracts executive summaries, tactical suggestions, and cross-meeting patterns.
               </p>
             </div>
-            {meeting.droppedQuotesCount > 0 && (
-              <span className="text-[11px] text-amber-500 border border-amber-500/30 px-2 py-0.5 rounded">
-                {meeting.droppedQuotesCount} hallucinated quotes dropped
-              </span>
-            )}
-          </div>
+          )}
 
-          <div className="divide-y divide-border">
-            {meeting.requestedWork.map((item, idx) => (
-              <div key={idx} className="py-3 flex flex-col sm:flex-row sm:items-start justify-between gap-3">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-xs font-medium text-foreground">{item.task}</span>
-                    {item.isScopeCreep && (
-                      <span className="text-[10px] border border-destructive/30 bg-destructive/10 text-destructive px-1.5 py-0.5 rounded flex items-center gap-1">
-                        <AlertTriangle className="w-2.5 h-2.5" />
-                        <span>Scope creep</span>
+          {meeting.status === "COMPLETED" && (
+            <>
+              {/* SUMMARY & ACTION ITEMS */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="md:col-span-2 border border-border rounded-lg bg-surface p-5">
+                  <h2 className="text-xs text-muted mb-3 font-medium">AI executive summary</h2>
+                  <p className="text-xs text-foreground leading-relaxed whitespace-pre-line">
+                    {meeting.analysis?.summary || meeting.summary || "No summary generated."}
+                  </p>
+                </div>
+
+                <div className="border border-border rounded-lg bg-surface p-5">
+                  <h2 className="text-xs text-muted mb-3 font-medium">Action items</h2>
+                  {meeting.analysis?.actionItems && Array.isArray(meeting.analysis.actionItems) && meeting.analysis.actionItems.length > 0 ? (
+                    <ul className="space-y-2">
+                      {meeting.analysis.actionItems.map((item, idx) => (
+                        <li key={idx} className="flex items-start gap-2 text-xs text-foreground">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-accent shrink-0 mt-0.5" />
+                          <span>{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : meeting.actionItems && Array.isArray(meeting.actionItems) && meeting.actionItems.length > 0 ? (
+                    <ul className="space-y-2">
+                      {meeting.actionItems.map((item, idx) => (
+                        <li key={idx} className="flex items-start gap-2 text-xs text-foreground">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-accent shrink-0 mt-0.5" />
+                          <span>{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-xs text-muted">No action items flagged.</p>
+                  )}
+                </div>
+              </div>
+
+              {/* TACTICAL SUGGESTIONS */}
+              {meeting.analysis?.suggestions && meeting.analysis.suggestions.length > 0 && (
+                <div className="border border-border rounded-lg bg-surface p-5">
+                  <div className="pb-3 border-b border-border mb-4">
+                    <h2 className="text-sm font-semibold text-foreground">
+                      Tactical Negotiation Suggestions ({meeting.analysis.suggestions.length})
+                    </h2>
+                    <p className="text-xs text-muted">
+                      Immediate levers to protect margin, anchor timelines, and formalize scope.
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {meeting.analysis.suggestions.map((s, idx) => (
+                      <div key={idx} className="p-4 rounded-md border border-border bg-surface-subtle flex flex-col justify-between">
+                        <div>
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-[10px] border border-border px-2 py-0.5 rounded text-muted">
+                              {s.category.replace("_", " ")}
+                            </span>
+                            <span className="text-[10px] text-muted">
+                              Priority #{s.priority}
+                            </span>
+                          </div>
+                          <h3 className="text-xs font-semibold text-foreground mb-1.5">{s.title}</h3>
+                          <p className="text-xs text-muted leading-relaxed mb-3">{s.description}</p>
+                          {s.exactQuote && (
+                            <blockquote className="text-[11px] text-foreground bg-surface p-2 rounded border border-border mb-3">
+                              “{s.exactQuote}”
+                            </blockquote>
+                          )}
+                        </div>
+
+                        <div className="pt-3 border-t border-border/60">
+                          <span className="text-[10px] text-muted block mb-1 font-medium">Recommended action:</span>
+                          <p className="text-xs text-accent font-medium leading-relaxed">{s.recommendedAction}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* CROSS-MEETING PATTERNS */}
+              {meeting.analysis?.patterns && meeting.analysis.patterns.length > 0 && (
+                <div className="border border-border rounded-lg bg-surface p-5">
+                  <div className="pb-3 border-b border-border mb-4">
+                    <h2 className="text-sm font-semibold text-foreground">
+                      Cross-Meeting Patterns Detected ({meeting.analysis.patterns.length})
+                    </h2>
+                    <p className="text-xs text-muted">
+                      Synthesized trends identified across your recent client discussions.
+                    </p>
+                  </div>
+
+                  <div className="space-y-3">
+                    {meeting.analysis.patterns.map((p, idx) => (
+                      <div key={idx} className="p-4 rounded-md border border-border bg-surface-subtle">
+                        <div className="flex items-start gap-2 mb-2">
+                          <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                          <div>
+                            <span className="text-xs font-semibold text-foreground block mb-0.5">{p.pattern}</span>
+                            <p className="text-xs text-muted leading-relaxed">{p.risk}</p>
+                          </div>
+                        </div>
+                        <div className="mt-2.5 pt-2.5 border-t border-border/60 pl-6">
+                          <span className="text-[11px] text-foreground font-medium">Strategic advice: </span>
+                          <span className="text-[11px] text-muted">{p.advice}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* REQUESTED WORK LIST WITH VERIFIED QUOTES */}
+              {meeting.requestedWork && meeting.requestedWork.length > 0 && (
+                <div className="border border-border rounded-lg bg-surface p-5">
+                  <div className="flex items-center justify-between pb-3 border-b border-border mb-4">
+                    <div>
+                      <h2 className="text-sm font-semibold text-foreground">
+                        Extracted Work Requests & Scope Creep
+                      </h2>
+                      <p className="text-xs text-muted">
+                        Every task is strictly grounded with exact quotes from the transcript.
+                      </p>
+                    </div>
+                    {meeting.droppedQuotesCount > 0 && (
+                      <span className="text-[11px] text-amber-500 border border-amber-500/30 px-2 py-0.5 rounded">
+                        {meeting.droppedQuotesCount} hallucinated quotes dropped
                       </span>
                     )}
                   </div>
-                  <blockquote className="text-xs text-muted bg-surface-subtle border-l-2 border-border pl-2.5 py-1 rounded-r mt-1">
-                    “{item.quote}”
-                  </blockquote>
+
+                  <div className="divide-y divide-border">
+                    {meeting.requestedWork.map((item, idx) => (
+                      <div key={idx} className="py-3 flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-xs font-medium text-foreground">{item.task}</span>
+                            {item.isScopeCreep && (
+                              <span className="text-[10px] border border-destructive/30 bg-destructive/10 text-destructive px-1.5 py-0.5 rounded flex items-center gap-1">
+                                <AlertTriangle className="w-2.5 h-2.5" />
+                                <span>Scope creep</span>
+                              </span>
+                            )}
+                          </div>
+                          <blockquote className="text-xs text-muted bg-surface-subtle border-l-2 border-border pl-2.5 py-1 rounded-r mt-1">
+                            “{item.quote}”
+                          </blockquote>
+                        </div>
+                        {item.speaker && (
+                          <span className="text-[11px] text-muted shrink-0">
+                            Speaker: {item.speaker}
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                {item.speaker && (
-                  <span className="text-[11px] text-muted shrink-0">
-                    Speaker: {item.speaker}
-                  </span>
-                )}
-              </div>
-            ))}
-          </div>
+              )}
+
+              {/* FLAGGED RISKY COMMITMENTS & FREE PROMISES */}
+              {meeting.riskyCommitments && meeting.riskyCommitments.length > 0 && (
+                <div className="border border-border rounded-lg bg-surface p-5">
+                  <div className="pb-3 border-b border-border mb-4">
+                    <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                      <ShieldAlert className="w-4 h-4 text-destructive" />
+                      <span>Flagged Risky Promises & Ambiguous Concessions ({meeting.riskyCommitments.length})</span>
+                    </h2>
+                    <p className="text-xs text-muted">
+                      Phrases where you yielded ground or made vague commitments that can be weaponized against your rates.
+                    </p>
+                  </div>
+
+                  <div className="space-y-4">
+                    {meeting.riskyCommitments.map((item, idx) => (
+                      <div key={idx} className="p-4 rounded-md border border-border bg-surface-subtle">
+                        <blockquote className="text-xs text-foreground bg-surface p-2.5 rounded border border-border mb-2.5">
+                          “{item.quote}”
+                        </blockquote>
+                        <div className="text-xs space-y-1.5">
+                          <p className="text-muted leading-relaxed">
+                            <strong className="text-destructive font-medium">Risk: </strong>{item.risk}
+                          </p>
+                          <p className="text-foreground leading-relaxed">
+                            <strong className="text-accent font-medium">Recommended assertive reply: </strong>
+                            <span>“{item.recommendedReply}”</span>
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
+          )}
         </div>
       )}
 
-      {/* FLAGGED RISKY COMMITMENTS & FREE PROMISES */}
-      {meeting.status === "COMPLETED" && meeting.riskyCommitments && meeting.riskyCommitments.length > 0 && (
-        <div className="border border-border rounded-lg bg-surface p-5 mb-10">
-          <div className="pb-3 border-b border-border mb-4">
-            <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
-              <ShieldAlert className="w-4 h-4 text-destructive" />
-              <span>Flagged Risky Promises & Ambiguous Concessions ({meeting.riskyCommitments.length})</span>
+      {/* TAB 2: TRANSCRIPT */}
+      {activeTab === "transcript" && (
+        <div className="border border-border rounded-lg bg-surface p-5">
+          <div className="flex items-center justify-between pb-3 border-b border-border mb-4">
+            <h2 className="text-sm font-semibold text-foreground">
+              Full Transcript ({meeting.segments.length} segments)
             </h2>
-            <p className="text-xs text-muted">
-              Phrases where you yielded ground or made vague commitments that can be weaponized against your rates.
-            </p>
+            <span className="text-xs text-muted">
+              ElevenLabs Scribe Realtime
+            </span>
           </div>
 
-          <div className="space-y-4">
-            {meeting.riskyCommitments.map((item, idx) => (
-              <div key={idx} className="p-4 rounded-md border border-border bg-surface-subtle">
-                <blockquote className="text-xs font-mono text-foreground bg-surface p-2.5 rounded border border-border mb-2.5">
-                  "{item.quote}"
-                </blockquote>
-                <div className="text-xs space-y-1.5">
-                  <p className="text-muted leading-relaxed">
-                    <strong className="text-destructive font-medium">Risk: </strong>{item.risk}
-                  </p>
-                  <p className="text-foreground leading-relaxed">
-                    <strong className="text-accent font-medium">Recommended assertive reply: </strong>
-                    <span className="font-mono text-[11px]">"{item.recommendedReply}"</span>
-                  </p>
+          {meeting.segments.length === 0 ? (
+            <div className="py-12 text-center text-xs text-muted">
+              No transcript segments recorded yet. If the meeting is live, speak into your mic or capture tab audio.
+            </div>
+          ) : (
+            <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2">
+              {meeting.segments.map((seg) => (
+                <div
+                  key={seg.id}
+                  className={`p-3 rounded-md border text-xs ${
+                    seg.speaker === "You"
+                      ? "bg-surface-subtle border-border/80 ml-4 sm:ml-8"
+                      : "bg-surface border-border mr-4 sm:mr-8"
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span
+                      className={`font-semibold text-[11px] font-mono ${
+                        seg.speaker === "You" ? "text-accent" : "text-foreground"
+                      }`}
+                    >
+                      {seg.speaker}
+                    </span>
+                    <span className="text-[10px] font-mono text-muted">
+                      {formatMs(seg.startTimeMs)} - {formatMs(seg.endTimeMs)}
+                    </span>
+                  </div>
+                  <p className="text-foreground leading-relaxed">{seg.text}</p>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
-
-      {/* TRANSCRIPT SEGMENT VIEWER */}
-      <div className="border border-border rounded-lg bg-surface p-5">
-        <div className="flex items-center justify-between pb-3 border-b border-border mb-4">
-          <h2 className="text-sm font-semibold text-foreground">
-            Full Transcript ({meeting.segments.length} segments)
-          </h2>
-          <span className="text-xs text-muted">
-            ElevenLabs Scribe Realtime
-          </span>
-        </div>
-
-        {meeting.segments.length === 0 ? (
-          <div className="py-12 text-center text-xs text-muted">
-            No transcript segments recorded yet. If the meeting is live, speak into your mic or capture tab audio.
-          </div>
-        ) : (
-          <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2">
-            {meeting.segments.map((seg) => (
-              <div
-                key={seg.id}
-                className={`p-3 rounded-md border text-xs ${
-                  seg.speaker === "You"
-                    ? "bg-surface-subtle border-border/80 ml-4 sm:ml-8"
-                    : "bg-surface border-border mr-4 sm:mr-8"
-                }`}
-              >
-                <div className="flex items-center justify-between mb-1.5">
-                  <span
-                    className={`font-semibold text-[11px] font-mono ${
-                      seg.speaker === "You" ? "text-accent" : "text-foreground"
-                    }`}
-                  >
-                    {seg.speaker}
-                  </span>
-                  <span className="text-[10px] font-mono text-muted">
-                    {formatMs(seg.startTimeMs)} - {formatMs(seg.endTimeMs)}
-                  </span>
-                </div>
-                <p className="text-foreground leading-relaxed">{seg.text}</p>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
     </div>
   );
 }
