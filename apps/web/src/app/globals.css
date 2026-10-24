@@ -41,6 +41,11 @@ button, a, input, select, textarea {
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* Hallmark Floor 49: Clickable elements with long text require nowrap */
+.nowrap, button.nowrap {
+  white-space: nowrap;
+}
+
 /* Floor 7: Reduced motion support */
 @media (prefers-reduced-motion: reduce) {
   *, ::before, ::after {

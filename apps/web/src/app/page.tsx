@@ -38,14 +38,14 @@ export default function LandingPage() {
             <div className="p-6 flex flex-col justify-between">
               <div>
                 <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-2 text-xs font-mono text-muted">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                    <span>audio_stream_active</span>
+                  <div className="flex items-center gap-2 text-xs text-muted">
+                    <span className="w-2 h-2 rounded-full bg-[var(--success)] motion-safe:animate-pulse" />
+                    <span className="font-mono text-[11px]">audio_stream_active</span>
                   </div>
-                  <span className="text-xs text-muted font-mono">16 kHz mono PCM16</span>
+                  <span className="text-xs text-muted">16 kHz mono PCM16</span>
                 </div>
 
-                <div className="space-y-3 font-mono text-xs">
+                <div className="space-y-3 text-xs">
                   <div className="p-3 rounded bg-surface-subtle border border-border">
                     <span className="text-muted block text-[11px] mb-1">[Others • Client 14:02:18]</span>
                     <p className="text-foreground">
@@ -63,7 +63,7 @@ export default function LandingPage() {
 
               <div className="mt-6 pt-4 border-t border-border flex items-center justify-between text-xs text-muted">
                 <span>Dual-stream tab + mic capture</span>
-                <span className="text-foreground font-mono">ElevenLabs Scribe STT</span>
+                <span className="text-foreground">ElevenLabs Scribe STT</span>
               </div>
             </div>
 
@@ -71,22 +71,22 @@ export default function LandingPage() {
             <div className="p-6 flex flex-col justify-between bg-surface-subtle/50">
               <div>
                 <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-2 text-xs font-mono text-muted">
+                  <div className="flex items-center gap-2 text-xs text-muted">
                     <ShieldAlert className="w-3.5 h-3.5 text-destructive" />
-                    <span>bad_client_session #04</span>
+                    <span>Bad client simulation</span>
                   </div>
-                  <span className="text-xs border border-border px-2 py-0.5 rounded text-muted font-mono">Difficulty: 3/3</span>
+                  <span className="text-xs border border-border px-2 py-0.5 rounded text-muted">Difficulty: 3/3</span>
                 </div>
 
                 <div className="space-y-3 text-xs">
                   <div className="p-3 rounded bg-surface border border-border">
-                    <span className="text-destructive font-mono block text-[11px] mb-1">Bad Client (Scope Creeper)</span>
+                    <span className="text-destructive font-medium block text-[11px] mb-1">Bad Client (Scope Creeper)</span>
                     <p className="text-foreground leading-relaxed">
-                      "If you are going to charge extra for basic mobile views, we may have to reconsider the entire engagement. Other freelancers include this as standard."
+                      “If you are going to charge extra for basic mobile views, we may have to reconsider the entire engagement. Other freelancers include this as standard.”
                     </p>
                   </div>
                   <div className="p-3 rounded bg-surface border border-border">
-                    <span className="text-muted font-mono block text-[11px] mb-1">Negotiation Scorecard (Turn 4)</span>
+                    <span className="text-muted font-medium block text-[11px] mb-1">Negotiation Scorecard (Turn 4)</span>
                     <p className="text-foreground leading-relaxed">
                       Boundary held firmly on turn 3 (+8 trust). Price anchor preserved at $5,000 baseline.
                     </p>
@@ -96,7 +96,7 @@ export default function LandingPage() {
 
               <div className="mt-6 pt-4 border-t border-border flex items-center justify-between text-xs text-muted">
                 <span>Grounded retrieval</span>
-                <span className="text-foreground font-mono">70% vector + 30% text rank</span>
+                <span className="text-foreground">70% vector + 30% text rank</span>
               </div>
             </div>
           </div>
@@ -153,22 +153,22 @@ export default function LandingPage() {
               Actionable negotiation scorecards
             </h2>
             <p className="text-xs text-muted leading-relaxed">
-              Every simulation concludes with a complete post-mortem. We reveal the client's hidden patience timeline, free concessions conceded, and three high-leverage rewrites.
+              Every simulation concludes with a complete post-mortem. We reveal the client’s hidden patience timeline, free concessions conceded, and three high-leverage rewrites.
             </p>
           </div>
 
-          <div className="border border-border rounded bg-surface-subtle p-4 font-mono text-xs space-y-3">
+          <div className="border border-border rounded bg-surface-subtle p-4 text-xs space-y-3">
             <div className="flex items-center justify-between pb-2 border-b border-border text-[11px] text-muted">
-              <span>SCORECARD #8812</span>
+              <span>Scorecard #8812</span>
               <span>Overall Score: 78/100</span>
             </div>
             <div>
               <span className="text-muted block text-[11px] mb-1">Turn 3 Weakness:</span>
-              <p className="text-foreground">"I can try to see if we can fit that in without charging extra."</p>
+              <p className="text-foreground">“I can try to see if we can fit that in without charging extra.”</p>
             </div>
             <div>
               <span className="text-foreground font-semibold block text-[11px] mb-1">Recommended Rewrite:</span>
-              <p className="text-foreground">"We can certainly include that feature. Let me send a change order with the revised timeline and additional cost."</p>
+              <p className="text-foreground">“We can certainly include that feature. Let me send a change order with the revised timeline and additional cost.”</p>
             </div>
           </div>
         </section>

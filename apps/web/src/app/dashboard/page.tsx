@@ -105,13 +105,13 @@ export default function DashboardPage() {
             type="text"
             value={newTitle}
             onChange={(e) => setNewTitle(e.target.value)}
-            placeholder="New meeting title (e.g. Acme Corp Sprint Review)..."
+            placeholder="New meeting title (e.g. Acme Corp Sprint Review)…"
             className="flex-1 px-3 py-2 text-xs rounded-md bg-surface-subtle border border-input text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
           />
           <button
             type="submit"
             disabled={isCreating}
-            className="bg-primary text-primary-foreground px-4 py-2 rounded-md text-xs font-medium hover:bg-primary-hover disabled:opacity-50 inline-flex items-center justify-center gap-1.5 whitespace-nowrap"
+            className="bg-primary text-primary-foreground px-4 py-2 rounded-md text-xs font-medium hover:bg-primary-hover active:opacity-90 focus-visible:ring-2 disabled:opacity-50 inline-flex items-center justify-center gap-1.5 whitespace-nowrap"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>Create new meeting</span>
@@ -121,8 +121,8 @@ export default function DashboardPage() {
 
       {/* MEETINGS LIST */}
       {loading ? (
-        <div className="py-20 text-center text-xs text-muted font-mono">
-          Loading meetings...
+        <div className="py-20 text-center text-xs text-muted">
+          Loading meetings…
         </div>
       ) : meetings.length === 0 ? (
         <div className="border border-dashed border-border rounded-lg p-10 text-center">
@@ -147,11 +147,11 @@ export default function DashboardPage() {
                   <span
                     className={`text-[10px] font-mono px-2 py-0.5 rounded border ${
                       m.status === "COMPLETED"
-                        ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
+                        ? "border-[var(--success)]/30 bg-[var(--success)]/10 text-[var(--success)]"
                         : m.status === "PROCESSING"
-                        ? "border-amber-500/30 bg-amber-500/10 text-amber-400 animate-pulse"
+                        ? "border-amber-500/30 bg-amber-500/10 text-amber-400 motion-safe:animate-pulse"
                         : m.status === "RECORDING"
-                        ? "border-accent/30 bg-accent/10 text-accent animate-pulse"
+                        ? "border-accent/30 bg-accent/10 text-accent motion-safe:animate-pulse"
                         : "border-destructive/30 bg-destructive/10 text-destructive"
                     }`}
                   >

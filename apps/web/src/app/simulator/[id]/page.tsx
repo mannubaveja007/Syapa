@@ -131,8 +131,8 @@ export default function SimulatorSessionPage() {
 
   if (loading) {
     return (
-      <div className="max-w-4xl mx-auto px-4 py-20 text-center text-xs font-mono text-muted">
-        Loading simulation session...
+      <div className="max-w-4xl mx-auto px-4 py-20 text-center text-xs text-muted">
+        Loading simulation session…
       </div>
     );
   }
@@ -141,7 +141,7 @@ export default function SimulatorSessionPage() {
     return (
       <div className="max-w-4xl mx-auto px-4 py-20 text-center">
         <h2 className="text-base font-semibold text-foreground mb-2">Session not found</h2>
-        <Link href="/simulator" className="text-xs text-muted hover:text-foreground underline">
+        <Link href="/simulator" className="text-xs text-muted hover:text-foreground underline active:opacity-80 focus-visible:ring-2">
           Back to simulator
         </Link>
       </div>
@@ -155,7 +155,7 @@ export default function SimulatorSessionPage() {
         <div>
           <Link
             href="/simulator"
-            className="text-xs text-muted hover:text-foreground inline-flex items-center gap-1.5 mb-1"
+            className="text-xs text-muted hover:text-foreground active:opacity-80 focus-visible:ring-2 inline-flex items-center gap-1.5 mb-1"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
             <span>Abandon session</span>
@@ -164,10 +164,10 @@ export default function SimulatorSessionPage() {
             <h1 className="text-base font-semibold text-foreground capitalize">
               {session.persona.replace("_", " ")}
             </h1>
-            <span className="text-[10px] font-mono border border-border px-1.5 py-0.5 rounded text-muted">
+            <span className="text-[10px] border border-border px-1.5 py-0.5 rounded text-muted">
               Difficulty: {session.difficulty}/3
             </span>
-            <span className="text-[10px] font-mono border border-emerald-500/30 text-emerald-400 px-1.5 py-0.5 rounded">
+            <span className="text-[10px] border border-[var(--success)]/30 text-[var(--success)] px-1.5 py-0.5 rounded">
               Grounded in project context
             </span>
           </div>
@@ -176,17 +176,17 @@ export default function SimulatorSessionPage() {
         <button
           onClick={handleEndAndScore}
           disabled={evaluating || session.turns.length < 2}
-          className="bg-primary text-primary-foreground px-3.5 py-1.5 rounded-md text-xs font-medium hover:bg-primary-hover flex items-center gap-1.5 disabled:opacity-50"
+          className="nowrap bg-primary text-primary-foreground px-3.5 py-1.5 rounded-md text-xs font-medium hover:bg-primary-hover active:opacity-90 focus-visible:ring-2 flex items-center gap-1.5 disabled:opacity-50"
         >
           {evaluating ? (
             <>
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              <span>Generating scorecard...</span>
+              <Loader2 className="w-3.5 h-3.5 motion-safe:animate-spin" />
+              <span>Scoring…</span>
             </>
           ) : (
             <>
               <Award className="w-3.5 h-3.5" />
-              <span>Conclude & Score</span>
+              <span>Conclude</span>
             </>
           )}
         </button>
@@ -203,7 +203,7 @@ export default function SimulatorSessionPage() {
               transition={{ duration: 0.15 }}
               className={`flex flex-col ${turn.role === "user" ? "items-end" : "items-start"}`}
             >
-              <div className="text-[10px] font-mono text-muted mb-1 px-1">
+              <div className="text-[10px] text-muted mb-1 px-1">
                 {turn.role === "user" ? "You (Freelancer)" : `Client (${session.persona.replace("_", " ")})`} • Turn {turn.turnIndex}
               </div>
               <div
@@ -220,9 +220,9 @@ export default function SimulatorSessionPage() {
         </AnimatePresence>
 
         {sending && (
-          <div className="flex items-center gap-2 text-xs font-mono text-muted py-2">
-            <RefreshCw className="w-3 h-3 animate-spin text-muted" />
-            <span>Bad Client is analyzing your reply and consulting grounded brief...</span>
+          <div className="flex items-center gap-2 text-xs text-muted py-2">
+            <RefreshCw className="w-3 h-3 motion-safe:animate-spin text-muted" />
+            <span>Bad Client is analyzing your reply and consulting brief…</span>
           </div>
         )}
 
@@ -238,13 +238,13 @@ export default function SimulatorSessionPage() {
             value={inputMessage}
             onChange={(e) => setInputMessage(e.target.value)}
             disabled={sending || evaluating}
-            placeholder="Type your negotiation reply (anchor price, defend boundaries, push for change orders)..."
-            className="flex-1 px-3.5 py-2.5 text-xs rounded-md bg-surface-subtle border border-input text-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:opacity-50"
+            placeholder="Type your negotiation reply (anchor price, defend boundaries, push for change orders)…"
+            className="flex-1 px-3.5 py-2.5 text-xs rounded-md bg-surface-subtle border border-input text-foreground focus:outline-none focus:ring-1 focus:ring-ring focus-visible:ring-2 disabled:opacity-50"
           />
           <button
             type="submit"
             disabled={sending || evaluating || !inputMessage.trim()}
-            className="bg-primary text-primary-foreground px-4 py-2.5 rounded-md text-xs font-medium hover:bg-primary-hover flex items-center justify-center gap-1.5 disabled:opacity-50"
+            className="bg-primary text-primary-foreground px-4 py-2.5 rounded-md text-xs font-medium hover:bg-primary-hover active:opacity-90 focus-visible:ring-2 flex items-center justify-center gap-1.5 disabled:opacity-50"
           >
             <Send className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">Send</span>

@@ -157,7 +157,7 @@ export default function DocumentsPage() {
                 rows={8}
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
-                placeholder="Paste the raw text of the brief or chat here..."
+                placeholder="Paste the raw text of the brief or chat here…"
                 className="w-full px-3 py-2 text-xs font-mono rounded-md bg-surface-subtle border border-input text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
               />
             </div>
@@ -165,17 +165,17 @@ export default function DocumentsPage() {
             <button
               type="submit"
               disabled={uploading}
-              className="w-full py-2 bg-primary text-primary-foreground text-xs font-medium rounded-md hover:bg-primary-hover flex items-center justify-center gap-2 disabled:opacity-50"
+              className="nowrap w-full py-2 bg-primary text-primary-foreground text-xs font-medium rounded-md hover:bg-primary-hover active:opacity-90 focus-visible:ring-2 flex items-center justify-center gap-2 disabled:opacity-50"
             >
               {uploading ? (
                 <>
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  <span>Chunking & embedding...</span>
+                  <Loader2 className="w-3.5 h-3.5 motion-safe:animate-spin" />
+                  <span>Embedding…</span>
                 </>
               ) : (
                 <>
                   <Upload className="w-3.5 h-3.5" />
-                  <span>Upload & embed</span>
+                  <span>Upload</span>
                 </>
               )}
             </button>
@@ -190,8 +190,8 @@ export default function DocumentsPage() {
             </h2>
 
             {loading ? (
-              <div className="py-12 text-center text-xs text-muted font-mono">
-                Loading documents...
+              <div className="py-12 text-center text-xs text-muted">
+                Loading documents…
               </div>
             ) : docs.length === 0 ? (
               <div className="py-12 text-center text-xs text-muted">

@@ -1,4 +1,5 @@
-/* hallmark: v2.0.0 | genre: modern-minimal | theme: extension-dark */
+/* Hallmark · v2.0.0 | genre: modern-minimal | theme: extension-dark */
+/* critique: high contrast dark mode for chrome sidepanel with balanced states */
 
 :root {
   --bg: #09090b;
@@ -7,9 +8,9 @@
   --border: #27272a;
   --fg: #f4f4f5;
   --muted: #a1a1aa;
-  --accent: #3b82f6;
-  --destructive: #ef4444;
-  --success: #10b981;
+  --accent: oklch(0.65 0.22 255);
+  --destructive: oklch(0.63 0.24 25);
+  --success: oklch(0.68 0.18 155);
   --radius: 6px;
   --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-mono: ui-monospace, Menlo, Monaco, Consolas, monospace;
@@ -34,6 +35,15 @@ body {
 input, button, select, textarea {
   font-family: inherit;
   font-size: 12px;
+}
+
+button:active {
+  transform: translateY(1px);
+}
+
+button:disabled, input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 :focus-visible {

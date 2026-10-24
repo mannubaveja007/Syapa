@@ -98,8 +98,8 @@ export default function MeetingDetailPage() {
 
   if (loading) {
     return (
-      <div className="max-w-5xl mx-auto px-4 py-20 text-center text-xs font-mono text-muted">
-        Loading meeting details...
+      <div className="max-w-5xl mx-auto px-4 py-20 text-center text-xs text-muted">
+        Loading meeting details…
       </div>
     );
   }
@@ -108,7 +108,7 @@ export default function MeetingDetailPage() {
     return (
       <div className="max-w-5xl mx-auto px-4 py-20 text-center">
         <h2 className="text-base font-semibold text-foreground mb-2">Meeting not found</h2>
-        <Link href="/dashboard" className="text-xs text-muted hover:text-foreground underline">
+        <Link href="/dashboard" className="text-xs text-muted hover:text-foreground underline active:opacity-80 focus-visible:ring-2">
           Back to dashboard
         </Link>
       </div>
@@ -129,7 +129,7 @@ export default function MeetingDetailPage() {
         <div>
           <Link
             href="/dashboard"
-            className="text-xs text-muted hover:text-foreground inline-flex items-center gap-1.5 mb-2"
+            className="text-xs text-muted hover:text-foreground active:opacity-80 focus-visible:ring-2 inline-flex items-center gap-1.5 mb-2"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
             <span>Back to meetings</span>
@@ -141,11 +141,11 @@ export default function MeetingDetailPage() {
             <span
               className={`text-[10px] font-mono px-2 py-0.5 rounded border ${
                 meeting.status === "COMPLETED"
-                  ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
+                  ? "border-[var(--success)]/30 bg-[var(--success)]/10 text-[var(--success)]"
                   : meeting.status === "PROCESSING"
-                  ? "border-amber-500/30 bg-amber-500/10 text-amber-400 animate-pulse"
+                  ? "border-amber-500/30 bg-amber-500/10 text-amber-400 motion-safe:animate-pulse"
                   : meeting.status === "RECORDING"
-                  ? "border-accent/30 bg-accent/10 text-accent animate-pulse"
+                  ? "border-accent/30 bg-accent/10 text-accent motion-safe:animate-pulse"
                   : "border-destructive/30 bg-destructive/10 text-destructive"
               }`}
             >
@@ -159,23 +159,23 @@ export default function MeetingDetailPage() {
             <button
               onClick={handleEndMeeting}
               disabled={ending}
-              className="bg-destructive text-destructive-foreground px-3 py-1.5 rounded-md text-xs font-medium hover:opacity-90 inline-flex items-center gap-1.5"
+              className="bg-destructive text-destructive-foreground px-3 py-1.5 rounded-md text-xs font-medium hover:opacity-90 active:opacity-80 focus-visible:ring-2 disabled:opacity-50 inline-flex items-center gap-1.5"
             >
               <Square className="w-3 h-3 fill-current" />
-              <span>{ending ? "Processing pipeline..." : "End meeting & analyze"}</span>
+              <span>{ending ? "Processing pipeline…" : "End meeting & analyze"}</span>
             </button>
           )}
 
           {meeting.status === "PROCESSING" && (
-            <div className="flex items-center gap-2 text-xs font-mono text-amber-400">
-              <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-              <span>Embedding & verifying quotes...</span>
+            <div className="flex items-center gap-2 text-xs text-amber-400">
+              <RefreshCw className="w-3.5 h-3.5 motion-safe:animate-spin" />
+              <span>Embedding & verifying quotes…</span>
             </div>
           )}
 
           <Link
             href={`/simulator?meetingId=${meeting.id}`}
-            className="border border-border text-foreground px-3 py-1.5 rounded-md text-xs font-medium hover:bg-surface-subtle inline-flex items-center gap-1.5"
+            className="border border-border text-foreground px-3 py-1.5 rounded-md text-xs font-medium hover:bg-surface-subtle active:opacity-80 focus-visible:ring-2 inline-flex items-center gap-1.5"
           >
             <Play className="w-3.5 h-3.5" />
             <span>Spar against this meeting</span>
@@ -188,7 +188,7 @@ export default function MeetingDetailPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
           {/* SUMMARY */}
           <div className="md:col-span-2 border border-border rounded-lg bg-surface p-5">
-            <h2 className="text-xs font-mono text-muted mb-3">AI EXECUTIVE SUMMARY (GEMMA 4)</h2>
+            <h2 className="text-xs text-muted mb-3 font-medium">AI executive summary</h2>
             <p className="text-xs text-foreground leading-relaxed whitespace-pre-line">
               {meeting.summary || "No summary generated."}
             </p>
@@ -196,7 +196,7 @@ export default function MeetingDetailPage() {
 
           {/* ACTION ITEMS */}
           <div className="border border-border rounded-lg bg-surface p-5">
-            <h2 className="text-xs font-mono text-muted mb-3">ACTION ITEMS</h2>
+            <h2 className="text-xs text-muted mb-3 font-medium">Action items</h2>
             {meeting.actionItems && Array.isArray(meeting.actionItems) && meeting.actionItems.length > 0 ? (
               <ul className="space-y-2">
                 {meeting.actionItems.map((item, idx) => (
@@ -226,7 +226,7 @@ export default function MeetingDetailPage() {
               </p>
             </div>
             {meeting.droppedQuotesCount > 0 && (
-              <span className="text-[11px] font-mono text-amber-500 border border-amber-500/30 px-2 py-0.5 rounded">
+              <span className="text-[11px] text-amber-500 border border-amber-500/30 px-2 py-0.5 rounded">
                 {meeting.droppedQuotesCount} hallucinated quotes dropped
               </span>
             )}
@@ -239,18 +239,18 @@ export default function MeetingDetailPage() {
                   <div className="flex items-center gap-2 mb-1">
                     <span className="text-xs font-medium text-foreground">{item.task}</span>
                     {item.isScopeCreep && (
-                      <span className="text-[10px] font-mono border border-destructive/30 bg-destructive/10 text-destructive px-1.5 py-0.5 rounded flex items-center gap-1">
+                      <span className="text-[10px] border border-destructive/30 bg-destructive/10 text-destructive px-1.5 py-0.5 rounded flex items-center gap-1">
                         <AlertTriangle className="w-2.5 h-2.5" />
                         <span>Scope creep</span>
                       </span>
                     )}
                   </div>
-                  <blockquote className="text-xs font-mono text-muted bg-surface-subtle border-l-2 border-border pl-2.5 py-1 rounded-r mt-1">
-                    "{item.quote}"
+                  <blockquote className="text-xs text-muted bg-surface-subtle border-l-2 border-border pl-2.5 py-1 rounded-r mt-1">
+                    “{item.quote}”
                   </blockquote>
                 </div>
                 {item.speaker && (
-                  <span className="text-[11px] font-mono text-muted shrink-0">
+                  <span className="text-[11px] text-muted shrink-0">
                     Speaker: {item.speaker}
                   </span>
                 )}
@@ -300,7 +300,7 @@ export default function MeetingDetailPage() {
           <h2 className="text-sm font-semibold text-foreground">
             Full Transcript ({meeting.segments.length} segments)
           </h2>
-          <span className="text-xs font-mono text-muted">
+          <span className="text-xs text-muted">
             ElevenLabs Scribe Realtime
           </span>
         </div>

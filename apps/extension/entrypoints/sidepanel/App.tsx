@@ -134,6 +134,12 @@ export function App() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100vh", padding: 16 }}>
+      <style>{`
+        button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+        button:active { transform: translateY(1px); }
+        button:disabled, input:disabled { opacity: 0.5; cursor: not-allowed; }
+        .nowrap { white-space: nowrap; }
+      `}</style>
       {/* HEADER */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingBottom: 12, borderBottom: "1px solid var(--border)", marginBottom: 16 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -166,7 +172,7 @@ export function App() {
               type="password"
               value={apiToken}
               onChange={(e) => saveApiToken(e.target.value)}
-              placeholder="syp_..."
+              placeholder="syp_…"
               style={{ width: "100%", padding: "8px 10px", borderRadius: "var(--radius)", backgroundColor: "var(--surface)", border: "1px solid var(--border)", color: "var(--fg)", outline: "none" }}
             />
             <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 4 }}>
@@ -220,10 +226,11 @@ export function App() {
           {/* START BUTTON */}
           <button
             onClick={handleStartRecording}
-            style={{ width: "100%", padding: "10px", backgroundColor: "var(--fg)", color: "var(--bg)", border: "none", borderRadius: "var(--radius)", fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}
+            className="nowrap focus-visible:ring-2 active:translate-y-px disabled:opacity-50"
+            style={{ width: "100%", padding: "10px", backgroundColor: "var(--fg)", color: "var(--bg)", border: "none", borderRadius: "var(--radius)", fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, whiteSpace: "nowrap" }}
           >
             <Mic size={15} />
-            <span>Start Tab & Mic Recording</span>
+            <span>Start Recording</span>
           </button>
         </div>
       )}
@@ -261,7 +268,7 @@ export function App() {
           <div style={{ flex: 1, overflowY: "auto", border: "1px solid var(--border)", borderRadius: "var(--radius)", backgroundColor: "var(--surface)", padding: 10, display: "flex", flexDirection: "column", gap: 8, marginBottom: 12 }}>
             {segments.length === 0 && !partialTranscript && (
               <div style={{ textAlign: "center", color: "var(--muted)", fontSize: 11, margin: "auto" }}>
-                Listening for dialogue on tab and microphone...
+                Listening for dialogue on tab and microphone…
               </div>
             )}
 

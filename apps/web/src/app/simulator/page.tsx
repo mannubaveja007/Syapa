@@ -133,13 +133,13 @@ export default function SimulatorLaunchPage() {
         <div className="lg:col-span-2 space-y-6">
           {/* STEP 1: CHOOSE PERSONA */}
           <div className="border border-border rounded-lg bg-surface p-5">
-            <h2 className="text-xs font-mono text-muted mb-3">1. SELECT CLIENT PERSONA</h2>
+            <h2 className="text-xs text-muted mb-3 font-medium">1. Select client persona</h2>
             <div className="space-y-2.5">
               {PERSONAS.map((p) => (
                 <div
                   key={p.id}
                   onClick={() => setSelectedPersona(p.id)}
-                  className={`p-3 rounded-md border cursor-pointer transition-colors ${
+                  className={`p-3 rounded-md border cursor-pointer transition-colors active:opacity-90 ${
                     selectedPersona === p.id
                       ? "border-primary bg-surface-subtle"
                       : "border-border hover:bg-surface-subtle/50"
@@ -147,7 +147,7 @@ export default function SimulatorLaunchPage() {
                 >
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-xs font-semibold text-foreground">{p.name}</span>
-                    <span className="text-[10px] font-mono text-muted">{p.difficultyHint}</span>
+                    <span className="text-[10px] text-muted">{p.difficultyHint}</span>
                   </div>
                   <p className="text-xs text-muted leading-relaxed">{p.desc}</p>
                 </div>
@@ -157,7 +157,7 @@ export default function SimulatorLaunchPage() {
 
           {/* STEP 2: DIFFICULTY */}
           <div className="border border-border rounded-lg bg-surface p-5">
-            <h2 className="text-xs font-mono text-muted mb-3">2. SELECT DIFFICULTY LEVEL</h2>
+            <h2 className="text-xs text-muted mb-3 font-medium">2. Select difficulty level</h2>
             <div className="grid grid-cols-3 gap-3">
               {[
                 { level: 1, label: "Level 1: Novice", note: "Mild pushback, willing to listen" },
@@ -168,7 +168,7 @@ export default function SimulatorLaunchPage() {
                   key={d.level}
                   type="button"
                   onClick={() => setDifficulty(d.level as 1 | 2 | 3)}
-                  className={`p-3 rounded-md border text-left transition-colors ${
+                  className={`p-3 rounded-md border text-left transition-colors active:opacity-90 focus-visible:ring-2 ${
                     difficulty === d.level
                       ? "border-primary bg-surface-subtle"
                       : "border-border hover:bg-surface-subtle/50"
@@ -183,14 +183,14 @@ export default function SimulatorLaunchPage() {
 
           {/* STEP 3: GROUNDED CONTEXT */}
           <div className="border border-border rounded-lg bg-surface p-5">
-            <h2 className="text-xs font-mono text-muted mb-3">3. GROUND IN REAL CONTEXT (HYBRID SEARCH)</h2>
+            <h2 className="text-xs text-muted mb-3 font-medium">3. Ground in real context (hybrid search)</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
               <div>
                 <label className="block text-muted mb-1">Project Brief</label>
                 <select
                   value={selectedBrief}
                   onChange={(e) => setSelectedBrief(e.target.value)}
-                  className="w-full px-3 py-2 rounded-md bg-surface-subtle border border-input text-foreground text-xs"
+                  className="w-full px-3 py-2 rounded-md bg-surface-subtle border border-input text-foreground text-xs focus-visible:ring-2"
                 >
                   <option value="">No brief attached (Generic negotiation)</option>
                   {docs.filter((d) => d.type === "BRIEF").map((d) => (
@@ -204,7 +204,7 @@ export default function SimulatorLaunchPage() {
                 <select
                   value={selectedMeetingId}
                   onChange={(e) => setSelectedMeetingId(e.target.value)}
-                  className="w-full px-3 py-2 rounded-md bg-surface-subtle border border-input text-foreground text-xs"
+                  className="w-full px-3 py-2 rounded-md bg-surface-subtle border border-input text-foreground text-xs focus-visible:ring-2"
                 >
                   <option value="">No past meeting attached</option>
                   {meetings.map((m) => (
@@ -218,19 +218,19 @@ export default function SimulatorLaunchPage() {
           <button
             onClick={handleStartSimulation}
             disabled={starting}
-            className="w-full py-3 bg-primary text-primary-foreground text-sm font-medium rounded-md hover:bg-primary-hover flex items-center justify-center gap-2 disabled:opacity-50"
+            className="w-full py-3 bg-primary text-primary-foreground text-sm font-medium rounded-md hover:bg-primary-hover active:opacity-90 focus-visible:ring-2 flex items-center justify-center gap-2 disabled:opacity-50"
           >
             <Play className="w-4 h-4 fill-current" />
-            <span>{starting ? "Initializing agent session..." : "Start Negotiation Sparring"}</span>
+            <span>{starting ? "Initializing agent session…" : "Start Negotiation Sparring"}</span>
           </button>
         </div>
 
         {/* PAST SCORECARDS HISTORY */}
         <div className="border border-border rounded-lg bg-surface p-5">
-          <h2 className="text-xs font-mono text-muted mb-3">RECENT SCORECARDS</h2>
+          <h2 className="text-xs text-muted mb-3 font-medium">Recent scorecards</h2>
 
           {loading ? (
-            <div className="py-10 text-center text-xs text-muted font-mono">Loading history...</div>
+            <div className="py-10 text-center text-xs text-muted">Loading history…</div>
           ) : sessions.length === 0 ? (
             <div className="py-10 text-center text-xs text-muted">
               No sparring sessions yet. Launch your first negotiation above.
@@ -244,8 +244,8 @@ export default function SimulatorLaunchPage() {
                       <span className="text-xs font-semibold text-foreground capitalize">
                         {s.persona.replace("_", " ")}
                       </span>
-                      <span className="text-[10px] font-mono border border-border px-1.5 rounded text-muted">
-                        Lvl {s.difficulty}
+                      <span className="text-[10px] border border-border px-1.5 rounded text-muted">
+                        Level {s.difficulty}
                       </span>
                     </div>
                     <span className="text-[11px] text-muted">

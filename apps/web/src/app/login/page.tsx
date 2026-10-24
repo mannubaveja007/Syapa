@@ -80,14 +80,14 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-2 bg-primary text-primary-foreground text-xs font-medium rounded-md hover:bg-primary-hover flex items-center justify-center gap-2 disabled:opacity-50"
+            className="w-full py-2 bg-primary text-primary-foreground text-xs font-medium rounded-md hover:bg-primary-hover active:opacity-90 focus-visible:ring-2 flex items-center justify-center gap-2 disabled:opacity-50"
           >
-            {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <span>Sign in</span>}
+            {loading ? <Loader2 className="w-3.5 h-3.5 motion-safe:animate-spin" /> : <span>Sign in</span>}
           </button>
         </form>
 
         <div className="mt-6 pt-4 border-t border-border text-center text-xs text-muted">
-          Don't have an account?{" "}
+          Don’t have an account?{" "}
           <Link href="/register" className="text-foreground hover:underline">
             Register here
           </Link>
