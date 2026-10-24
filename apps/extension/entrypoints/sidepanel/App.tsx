@@ -176,7 +176,7 @@ export function App() {
                 rel="noreferrer"
                 style={{ fontSize: 11, color: "var(--accent)", textDecoration: "none" }}
               >
-                Get API token from Web App →
+                Open Web App settings to create token
               </a>
             </div>
           </div>
@@ -282,7 +282,7 @@ export function App() {
             {partialTranscript && (
               <div style={{ padding: 8, borderRadius: 4, backgroundColor: "transparent", border: "1px dashed var(--border)", fontSize: 11, opacity: 0.8 }}>
                 <span style={{ fontWeight: 600, fontFamily: "var(--font-mono)", color: "var(--muted)", display: "block", marginBottom: 2 }}>
-                  {partialTranscript.speaker} (speaking...)
+                  {partialTranscript.speaker} (speaking…)
                 </span>
                 <p style={{ color: "var(--muted)", fontStyle: "italic" }}>{partialTranscript.text}</p>
               </div>
@@ -294,9 +294,9 @@ export function App() {
           {/* STOP BUTTON */}
           <button
             onClick={handleStopRecording}
-            style={{ width: "100%", padding: "10px", backgroundColor: "var(--destructive)", color: "#ffffff", border: "none", borderRadius: "var(--radius)", fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}
+            style={{ width: "100%", padding: "10px", backgroundColor: "var(--destructive)", color: "var(--fg)", border: "none", borderRadius: "var(--radius)", fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, whiteSpace: "nowrap" }}
           >
-            <Square size={14} fill="#ffffff" />
+            <Square size={14} fill="currentColor" />
             <span>Stop & Send to Syapa</span>
           </button>
         </div>

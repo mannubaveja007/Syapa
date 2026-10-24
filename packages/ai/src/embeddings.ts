@@ -3,6 +3,8 @@ export interface EmbeddingsOptions {
   retries?: number;
 }
 
+const REQUIRED_EMBED_DIM = 1024;
+
 export class EmbeddingsClient {
   private baseUrl: string;
   private apiKey: string;
@@ -11,11 +13,18 @@ export class EmbeddingsClient {
   private defaultTimeout: number;
 
   constructor() {
-    this.baseUrl = (process.env.EMBED_BASE_URL || "http://localhost:11434/v1").replace(/\/+$/, "");
+    this.baseUrl = (process.env.EMBED_BASE_URL || "https://openrouter.ai/api/v1").replace(/\/+$/, "");
     this.apiKey = process.env.EMBED_API_KEY || "";
-    this.model = process.env.EMBED_MODEL || "nomic-embed-text";
-    this.dimension = Number(process.env.EMBED_DIM) || 768;
+    this.model = process.env.EMBED_MODEL || "openai/text-embedding-3-small";
+    this.dimension = Number(process.env.EMBED_DIM) || REQUIRED_EMBED_DIM;
     this.defaultTimeout = 30000;
+
+    // Fast-fail startup check: ensure EMBED_DIM equals 1024 (Prisma vector(1024))
+    if (this.dimension !== REQUIRED_EMBED_DIM) {
+      throw new Error(
+        `[Embeddings Startup Error] EMBED_DIM is configured as ${this.dimension}, but PostgreSQL/Prisma requires exactly ${REQUIRED_EMBED_DIM} dimensions for vector(1024). Please set EMBED_DIM=1024.`
+      );
+    }
   }
 
   getBaseUrl(): string {
@@ -31,7 +40,36 @@ export class EmbeddingsClient {
   }
 
   /**
-   * Embeds a single text string into a vector.
+   * Truncates (or pads) a vector to targetDim and L2-normalizes it.
+   */
+  private normalizeToTargetDim(vec: number[], targetDim = REQUIRED_EMBED_DIM): number[] {
+    let result: number[];
+    if (vec.length >= targetDim) {
+      result = vec.slice(0, targetDim);
+    } else {
+      result = new Array(targetDim).fill(0);
+      for (let i = 0; i < vec.length; i++) {
+        result[i] = vec[i];
+      }
+    }
+
+    // L2-normalize
+    let sumSquares = 0;
+    for (let i = 0; i < result.length; i++) {
+      sumSquares += result[i] * result[i];
+    }
+    const norm = Math.sqrt(sumSquares);
+    if (norm > 0) {
+      for (let i = 0; i < result.length; i++) {
+        result[i] = result[i] / norm;
+      }
+    }
+
+    return result;
+  }
+
+  /**
+   * Embeds a single text string into a vector of exactly 1024 dimensions.
    */
   async embed(text: string, options: EmbeddingsOptions = {}): Promise<number[]> {
     const results = await this.embedBatch([text], options);
@@ -39,13 +77,13 @@ export class EmbeddingsClient {
   }
 
   /**
-   * Embeds multiple text strings in batch.
+   * Embeds multiple text strings in a single batched HTTP request.
    */
   async embedBatch(texts: string[], options: EmbeddingsOptions = {}): Promise<number[][]> {
     if (!texts.length) return [];
 
     const timeout = options.timeoutMs ?? this.defaultTimeout;
-    const maxRetries = options.retries ?? 2;
+    const maxRetries = options.retries ?? 3;
     let attempt = 0;
     let lastError: any = null;
 
@@ -54,7 +92,6 @@ export class EmbeddingsClient {
     };
     if (this.apiKey) {
       headers["Authorization"] = `Bearer ${this.apiKey}`;
-      // OpenRouter compatibility headers
       if (this.baseUrl.includes("openrouter.ai")) {
         headers["HTTP-Referer"] = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
         headers["X-Title"] = "Syapa";
@@ -67,14 +104,20 @@ export class EmbeddingsClient {
       const timer = setTimeout(() => controller.abort(), timeout);
 
       try {
-        console.log(`[Embeddings] Attempt ${attempt}: embedding ${texts.length} items with ${this.model} at ${this.baseUrl}`);
+        console.log(`[Embeddings] Attempt ${attempt}: sending batched request for ${texts.length} items using ${this.model} at ${this.baseUrl}`);
+        const bodyPayload: Record<string, any> = {
+          model: this.model,
+          input: texts.length === 1 ? texts[0] : texts,
+        };
+        // Ollama OpenAI-compatible endpoint throws 400 if dimensions exceeds model native length (e.g. 768 for nomic)
+        if (!this.baseUrl.includes(":11434") && !this.baseUrl.includes("ollama")) {
+          bodyPayload.dimensions = REQUIRED_EMBED_DIM;
+        }
+
         const response = await fetch(`${this.baseUrl}/embeddings`, {
           method: "POST",
           headers,
-          body: JSON.stringify({
-            model: this.model,
-            input: texts.length === 1 ? texts[0] : texts,
-          }),
+          body: JSON.stringify(bodyPayload),
           signal: controller.signal,
         });
 
@@ -90,14 +133,13 @@ export class EmbeddingsClient {
           throw new Error(`Unexpected embeddings response structure: ${JSON.stringify(data)}`);
         }
 
-        // Sort data items by index if present
+        // Sort data items by index
         const sorted = [...data.data].sort((a, b) => (a.index ?? 0) - (b.index ?? 0));
-        const embeddings = sorted.map((item) => item.embedding as number[]);
-
-        // Update dimension if discovered
-        if (embeddings[0] && embeddings[0].length !== this.dimension) {
-          this.dimension = embeddings[0].length;
-        }
+        
+        // Ensure every embedding is strictly 1024 dimensions and L2-normalized
+        const embeddings = sorted.map((item) =>
+          this.normalizeToTargetDim(item.embedding as number[], REQUIRED_EMBED_DIM)
+        );
 
         return embeddings;
       } catch (err: any) {
@@ -105,7 +147,7 @@ export class EmbeddingsClient {
         lastError = err;
         console.warn(`[Embeddings] Error on attempt ${attempt}:`, err?.message || err);
         if (attempt <= maxRetries) {
-          const backoff = Math.min(1000 * Math.pow(2, attempt - 1), 5000);
+          const backoff = Math.min(1000 * Math.pow(2, attempt - 1), 6000);
           await new Promise((res) => setTimeout(res, backoff));
         }
       }

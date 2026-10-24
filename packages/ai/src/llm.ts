@@ -10,17 +10,60 @@ export interface LLMOptions {
   maxTokens?: number;
   timeoutMs?: number;
   retries?: number;
+  callType?: "MEETING_ANALYSIS" | "SIMULATION_TURN" | "SCORECARD" | "EMBEDDINGS";
+  onUsage?: (usage: {
+    model: string;
+    provider: string;
+    callType: string;
+    promptTokens: number;
+    completionTokens: number;
+    totalTokens: number;
+    latencyMs: number;
+    cost: number;
+  }) => Promise<unknown> | unknown;
 }
+
+// Global FIFO Mutex for serialized execution of :free models to prevent OpenRouter 429s
+class AsyncMutex {
+  private queue: Array<() => void> = [];
+  private locked = false;
+
+  async acquire(): Promise<() => void> {
+    return new Promise((resolve) => {
+      const execute = () => {
+        this.locked = true;
+        resolve(() => {
+          this.locked = false;
+          const next = this.queue.shift();
+          if (next) next();
+        });
+      };
+
+      if (!this.locked) {
+        execute();
+      } else {
+        this.queue.push(execute);
+      }
+    });
+  }
+}
+
+const freeModelMutex = new AsyncMutex();
 
 export class LLMClient {
   private baseUrl: string;
+  private apiKey: string;
   private model: string;
+  private fallbackModels: string[];
   private defaultTimeout: number;
 
   constructor() {
-    this.baseUrl = (process.env.LLM_BASE_URL || "http://localhost:11434/v1").replace(/\/+$/, "");
-    this.model = process.env.LLM_MODEL || "gemma4:12b";
-    this.defaultTimeout = Number(process.env.LLM_TIMEOUT_MS) || 60000;
+    this.baseUrl = (process.env.LLM_BASE_URL || "https://openrouter.ai/api/v1").replace(/\/+$/, "");
+    this.apiKey = process.env.LLM_API_KEY || "";
+    this.model = process.env.LLM_MODEL || "google/gemma-2-9b-it:free";
+    const fallbacks = process.env.LLM_FALLBACK_MODELS || "meta-llama/llama-3.3-70b-instruct:free,mistralai/mistral-7b-instruct:free";
+    this.fallbackModels = fallbacks.split(",").map((m) => m.trim()).filter(Boolean);
+    this.defaultTimeout = Number(process.env.LLM_TIMEOUT_MS) || 90000;
   }
 
   getBaseUrl(): string {
@@ -31,59 +74,142 @@ export class LLMClient {
     return this.model;
   }
 
+  getFallbackModels(): string[] {
+    return this.fallbackModels;
+  }
+
+  private isFreeModel(modelName: string): boolean {
+    return modelName.toLowerCase().includes(":free");
+  }
+
   async chatCompletion(messages: LLMMessage[], options: LLMOptions = {}): Promise<string> {
-    const timeout = options.timeoutMs ?? this.defaultTimeout;
-    const maxRetries = options.retries ?? 2;
-    let attempt = 0;
+    const modelsToTry = [this.model, ...this.fallbackModels];
     let lastError: any = null;
 
-    while (attempt <= maxRetries) {
-      attempt++;
-      const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), timeout);
+    for (let mIdx = 0; mIdx < modelsToTry.length; mIdx++) {
+      const currentModel = modelsToTry[mIdx];
+      const isFree = this.isFreeModel(currentModel);
+      const maxRetries = options.retries ?? 3;
+      let attempt = 0;
 
-      try {
-        console.log(`[LLM] Attempt ${attempt}: calling ${this.baseUrl}/chat/completions with model ${this.model}`);
-        const response = await fetch(`${this.baseUrl}/chat/completions`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            model: this.model,
-            messages,
-            temperature: options.temperature ?? 0.7,
-            max_tokens: options.maxTokens,
-          }),
-          signal: controller.signal,
-        });
-
-        clearTimeout(timer);
-
-        if (!response.ok) {
-          const errBody = await response.text();
-          throw new Error(`LLM HTTP ${response.status}: ${errBody}`);
+      while (attempt <= maxRetries) {
+        attempt++;
+        let releaseMutex: (() => void) | null = null;
+        if (isFree) {
+          releaseMutex = await freeModelMutex.acquire();
         }
 
-        const data = (await response.json()) as any;
-        const reply = data.choices?.[0]?.message?.content ?? "";
-        return reply.trim();
-      } catch (err: any) {
-        clearTimeout(timer);
-        lastError = err;
-        console.warn(`[LLM] Error on attempt ${attempt}:`, err?.message || err);
-        if (attempt <= maxRetries) {
-          const backoff = Math.min(1000 * Math.pow(2, attempt - 1), 5000);
-          await new Promise((res) => setTimeout(res, backoff));
+        const controller = new AbortController();
+        const timeout = options.timeoutMs ?? this.defaultTimeout;
+        const timer = setTimeout(() => controller.abort(), timeout);
+        const startTime = Date.now();
+
+        try {
+          console.log(`[LLM] Model [${currentModel}] Attempt ${attempt}: calling ${this.baseUrl}/chat/completions`);
+
+          const headers: Record<string, string> = {
+            "Content-Type": "application/json",
+          };
+          if (this.apiKey) {
+            headers["Authorization"] = `Bearer ${this.apiKey}`;
+          }
+          if (this.baseUrl.includes("openrouter.ai")) {
+            headers["HTTP-Referer"] = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+            headers["X-Title"] = "Syapa";
+          }
+
+          const response = await fetch(`${this.baseUrl}/chat/completions`, {
+            method: "POST",
+            headers,
+            body: JSON.stringify({
+              model: currentModel,
+              messages,
+              temperature: options.temperature ?? 0.7,
+              max_tokens: options.maxTokens,
+            }),
+            signal: controller.signal,
+          });
+
+          clearTimeout(timer);
+          const latencyMs = Date.now() - startTime;
+
+          // Handle 429 Rate Limit with exponential backoff
+          if (response.status === 429) {
+            const retryAfterHeader = response.headers.get("retry-after");
+            const waitTime = retryAfterHeader ? Number(retryAfterHeader) * 1000 : Math.min(2000 * Math.pow(2, attempt), 10000);
+            console.warn(`[LLM 429 Rate Limit] Model ${currentModel} returned 429. Backing off for ${waitTime}ms...`);
+            if (releaseMutex) {
+              releaseMutex();
+              releaseMutex = null;
+            }
+            await new Promise((res) => setTimeout(res, waitTime));
+            continue;
+          }
+
+          if (!response.ok) {
+            const errBody = await response.text();
+            throw new Error(`LLM HTTP ${response.status}: ${errBody}`);
+          }
+
+          const data = (await response.json()) as any;
+          const reply = data.choices?.[0]?.message?.content ?? "";
+
+          // Track usage if onUsage callback provided
+          if (options.onUsage && data.usage) {
+            const promptTokens = data.usage.prompt_tokens || 0;
+            const completionTokens = data.usage.completion_tokens || 0;
+            const totalTokens = data.usage.total_tokens || (promptTokens + completionTokens);
+            const provider = this.baseUrl.includes("openrouter.ai") ? "openrouter" : "ollama";
+
+            // Estimate cost ($0 for free/local)
+            const cost = isFree || provider === "ollama" ? 0 : (promptTokens * 0.00000015 + completionTokens * 0.0000006);
+
+            try {
+              await options.onUsage({
+                model: currentModel,
+                provider,
+                callType: options.callType || "MEETING_ANALYSIS",
+                promptTokens,
+                completionTokens,
+                totalTokens,
+                latencyMs,
+                cost,
+              });
+            } catch (usageErr) {
+              console.warn("[LLM] Usage logging callback error:", usageErr);
+            }
+          }
+
+          if (releaseMutex) {
+            releaseMutex();
+            releaseMutex = null;
+          }
+
+          return reply.trim();
+        } catch (err: any) {
+          clearTimeout(timer);
+          if (releaseMutex) {
+            releaseMutex();
+            releaseMutex = null;
+          }
+          lastError = err;
+          console.warn(`[LLM Error] Model ${currentModel} attempt ${attempt} failed:`, err?.message || err);
+
+          if (attempt <= maxRetries) {
+            const backoff = Math.min(1000 * Math.pow(2, attempt - 1), 6000);
+            await new Promise((res) => setTimeout(res, backoff));
+          }
         }
       }
+
+      console.warn(`[LLM] Model ${currentModel} exhausted retries. Falling back to next model...`);
     }
 
-    throw new Error(`LLM failed after ${maxRetries + 1} attempts: ${lastError?.message}`);
+    throw new Error(`All LLM models failed [${modelsToTry.join(", ")}]: ${lastError?.message}`);
   }
 
   /**
-   * Enforces structured JSON output matching a Zod schema with one automatic retry on schema mismatch.
+   * Enforces structured JSON output matching a Zod schema with repair retry.
    */
   async structuredOutput<T>(
     messages: LLMMessage[],
@@ -103,7 +229,7 @@ export class LLMClient {
 
     let rawReply = await this.chatCompletion(enrichedMessages, {
       ...options,
-      temperature: options.temperature ?? 0.2, // lower temperature for JSON
+      temperature: options.temperature ?? 0.2,
     });
 
     try {
@@ -113,7 +239,6 @@ export class LLMClient {
     } catch (firstErr: any) {
       console.warn(`[LLM] Structured output validation failed: ${firstErr.message}. Attempting 1 repair retry...`);
 
-      // Retry once by feeding the model its faulty output and the validation error
       const retryMessages: LLMMessage[] = [
         ...enrichedMessages,
         { role: "assistant", content: rawReply },
@@ -135,12 +260,10 @@ export class LLMClient {
   }
 
   private cleanAndParseJson(text: string): any {
-    // Strip markdown code fences if model enclosed JSON in ```json ... ```
     let cleaned = text.trim();
     if (cleaned.startsWith("```")) {
       cleaned = cleaned.replace(/^```(?:json)?\n?/, "").replace(/\n?```$/, "");
     }
-    // Find the outermost JSON object bounds if there is extraneous text
     const firstBrace = cleaned.indexOf("{");
     const lastBrace = cleaned.lastIndexOf("}");
     if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {

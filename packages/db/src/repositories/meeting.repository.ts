@@ -21,6 +21,7 @@ export interface SaveMeetingAnalysisParams {
   summary: string;
   actionItems: string[];
   requestedWork: any[];
+  riskyCommitments?: any[];
   droppedQuotesCount: number;
 }
 
@@ -100,6 +101,7 @@ export class MeetingRepository {
         summary: params.summary,
         actionItems: params.actionItems,
         requestedWork: params.requestedWork,
+        riskyCommitments: params.riskyCommitments || [],
         droppedQuotesCount: params.droppedQuotesCount,
       },
     });

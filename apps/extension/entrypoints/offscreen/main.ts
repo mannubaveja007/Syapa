@@ -170,10 +170,23 @@ function setupStreamProcessor(
   const audioCtx = new AudioContext({ sampleRate: 16000 });
   const source = audioCtx.createMediaStreamSource(stream);
 
+  // FIX: Route tab audio back to the speakers so the user can hear the meeting
+  if (speaker === "Others") {
+    const playbackNode = audioCtx.createGain();
+    playbackNode.gain.value = 1.0;
+    source.connect(playbackNode);
+    playbackNode.connect(audioCtx.destination);
+  }
+
   // ScriptProcessor or AudioWorklet for resampling and chunk streaming
   const processor = audioCtx.createScriptProcessor(4096, 1, 1);
   source.connect(processor);
-  processor.connect(audioCtx.destination);
+
+  // Connect processor to destination through a silent gain node to drive processing without mic feedback
+  const silentNode = audioCtx.createGain();
+  silentNode.gain.value = 0;
+  processor.connect(silentNode);
+  silentNode.connect(audioCtx.destination);
 
   let ws: WebSocket | null = null;
 

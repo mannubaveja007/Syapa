@@ -90,6 +90,7 @@ model Meeting {
   summary            String?              @db.Text
   actionItems        Json?
   requestedWork      Json?
+  riskyCommitments   Json?
   droppedQuotesCount Int                  @default(0)
   metadata           Json?
   createdAt          DateTime             @default(now())
@@ -125,22 +126,24 @@ model ProjectContext {
 }
 
 model DocumentChunk {
-  id               String                  @id @default(cuid())
+  id               String                    @id @default(cuid())
   userId           String
-  user             User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user             User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
   meetingId        String?
-  meeting          Meeting?                @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  meeting          Meeting?                  @relation(fields: [meetingId], references: [id], onDelete: Cascade)
   projectContextId String?
-  projectContext   ProjectContext?         @relation(fields: [projectContextId], references: [id], onDelete: Cascade)
-  contextType      String                  // "BRIEF" | "CHAT" | "MEETING_CHUNK"
-  chunkIndex       Int                     @default(0)
-  content          String                  @db.Text
+  projectContext   ProjectContext?           @relation(fields: [projectContextId], references: [id], onDelete: Cascade)
+  contextType      String                    // "BRIEF" | "CHAT" | "MEETING_CHUNK"
+  chunkIndex       Int                       @default(0)
+  content          String                    @db.Text
   metadata         Json?
-  embedding        Unsupported("vector")?
+  embeddingModel   String                    @default("openai/text-embedding-3-small")
+  embedding        Unsupported("vector(1024)")?
   searchVector     Unsupported("tsvector")?
-  createdAt        DateTime                @default(now())
+  createdAt        DateTime                  @default(now())
 
   @@index([userId, contextType])
+  @@index([embeddingModel])
 }
 
 model SimulationSession {
@@ -191,4 +194,20 @@ model Scorecard {
   vaguePromises   Json
   rewrites        Json
   createdAt       DateTime          @default(now())
+}
+
+model AiUsage {
+  id               String   @id @default(cuid())
+  model            String
+  provider         String
+  callType         String   // "MEETING_ANALYSIS" | "SIMULATION_TURN" | "SCORECARD" | "EMBEDDINGS"
+  promptTokens     Int      @default(0)
+  completionTokens Int      @default(0)
+  totalTokens      Int      @default(0)
+  cost             Float    @default(0)
+  latencyMs        Int      @default(0)
+  metadata         Json?
+  createdAt        DateTime @default(now())
+
+  @@index([callType, createdAt])
 }

@@ -20,6 +20,12 @@ interface RequestedWorkItem {
   isScopeCreep: boolean;
 }
 
+interface RiskyCommitmentItem {
+  quote: string;
+  risk: string;
+  recommendedReply: string;
+}
+
 interface MeetingDetail {
   id: string;
   title: string;
@@ -30,6 +36,7 @@ interface MeetingDetail {
   summary?: string | null;
   actionItems?: string[] | null;
   requestedWork?: RequestedWorkItem[] | null;
+  riskyCommitments?: RiskyCommitmentItem[] | null;
   droppedQuotesCount: number;
   createdAt: string;
   segments: Segment[];
@@ -247,6 +254,40 @@ export default function MeetingDetailPage() {
                     Speaker: {item.speaker}
                   </span>
                 )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* FLAGGED RISKY COMMITMENTS & FREE PROMISES */}
+      {meeting.status === "COMPLETED" && meeting.riskyCommitments && meeting.riskyCommitments.length > 0 && (
+        <div className="border border-border rounded-lg bg-surface p-5 mb-10">
+          <div className="pb-3 border-b border-border mb-4">
+            <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
+              <ShieldAlert className="w-4 h-4 text-destructive" />
+              <span>Flagged Risky Promises & Ambiguous Concessions ({meeting.riskyCommitments.length})</span>
+            </h2>
+            <p className="text-xs text-muted">
+              Phrases where you yielded ground or made vague commitments that can be weaponized against your rates.
+            </p>
+          </div>
+
+          <div className="space-y-4">
+            {meeting.riskyCommitments.map((item, idx) => (
+              <div key={idx} className="p-4 rounded-md border border-border bg-surface-subtle">
+                <blockquote className="text-xs font-mono text-foreground bg-surface p-2.5 rounded border border-border mb-2.5">
+                  "{item.quote}"
+                </blockquote>
+                <div className="text-xs space-y-1.5">
+                  <p className="text-muted leading-relaxed">
+                    <strong className="text-destructive font-medium">Risk: </strong>{item.risk}
+                  </p>
+                  <p className="text-foreground leading-relaxed">
+                    <strong className="text-accent font-medium">Recommended assertive reply: </strong>
+                    <span className="font-mono text-[11px]">"{item.recommendedReply}"</span>
+                  </p>
+                </div>
               </div>
             ))}
           </div>
