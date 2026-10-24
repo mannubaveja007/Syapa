@@ -27,6 +27,38 @@ const RawLLMAnalysisSchema = z.object({
   ).default([]).describe("Flagged free promises, scope giveaways, or vague commitments made by the freelancer"),
 });
 
+class AsyncJobQueue {
+  private queue: Array<() => Promise<void>> = [];
+  private running = false;
+
+  enqueue(task: () => Promise<void>) {
+    this.queue.push(task);
+    this.processNext();
+  }
+
+  private async processNext() {
+    if (this.running || this.queue.length === 0) return;
+    this.running = true;
+    const nextTask = this.queue.shift();
+    if (nextTask) {
+      try {
+        await nextTask();
+      } catch (err) {
+        console.error("[AsyncJobQueue] Background pipeline job failed:", err);
+      } finally {
+        this.running = false;
+        this.processNext();
+      }
+    }
+  }
+}
+
+export const pipelineJobQueue = new AsyncJobQueue();
+
+export function queueMeetingProcessing(meetingId: string, userId: string) {
+  pipelineJobQueue.enqueue(() => processMeetingEnded(meetingId, userId));
+}
+
 export async function processMeetingEnded(meetingId: string, userId: string) {
   console.log(`[Pipeline] Starting post-meeting processing for meeting ${meetingId}...`);
   await MeetingRepository.updateStatus(meetingId, "PROCESSING", new Date());

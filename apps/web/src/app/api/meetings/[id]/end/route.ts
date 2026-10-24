@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { MeetingRepository } from "@syapa/db";
 import { authenticateRequest } from "@/lib/auth";
-import { processMeetingEnded } from "@/lib/pipeline";
+import { queueMeetingProcessing } from "@/lib/pipeline";
 
 export async function POST(
   req: NextRequest,
@@ -17,10 +17,8 @@ export async function POST(
     return NextResponse.json({ error: "Meeting not found" }, { status: 404 });
   }
 
-  // Trigger post-meeting processing pipeline in background
-  processMeetingEnded(params.id, user.userId).catch((err) => {
-    console.error("[POST /api/meetings/[id]/end] Background pipeline error:", err);
-  });
+  // Queue post-meeting processing pipeline in background FIFO queue
+  queueMeetingProcessing(params.id, user.userId);
 
   return NextResponse.json({
     message: "Meeting ended. Post-meeting pipeline initiated.",
