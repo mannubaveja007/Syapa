@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { prisma } from "../client.js";
+import { prisma } from "../client";
 
 export interface StoreChunkInput {
   id?: string;

@@ -1,0 +1,113 @@
+/* hallmark: v2.0.0 | genre: modern-minimal | theme: editorial-slate */
+/* critique: clean tokens, strict contrast, no arbitrary transitions, accessible focus-visible */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #fbfbfb;
+  --foreground: #121316;
+  
+  --surface: #ffffff;
+  --surface-subtle: #f4f4f6;
+  --surface-muted: #ebebee;
+  
+  --border: #e2e2e6;
+  --input: #dcdcde;
+  --ring: #121316;
+  
+  --primary: #121316;
+  --primary-foreground: #ffffff;
+  --primary-hover: #27272a;
+  
+  --secondary: #f0f0f3;
+  --secondary-foreground: #18181b;
+  
+  --muted: #64646e;
+  --muted-foreground: #71717a;
+  
+  --accent: #2563eb;
+  --accent-foreground: #ffffff;
+  
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
+  
+  --card: #ffffff;
+  --card-foreground: #121316;
+  
+  --radius: 8px;
+  
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.dark {
+  --background: #09090b;
+  --foreground: #f4f4f5;
+  
+  --surface: #121215;
+  --surface-subtle: #18181c;
+  --surface-muted: #222227;
+  
+  --border: #27272a;
+  --input: #2f2f35;
+  --ring: #f4f4f5;
+  
+  --primary: #f4f4f5;
+  --primary-foreground: #09090b;
+  --primary-hover: #e4e4e7;
+  
+  --secondary: #1e1e24;
+  --secondary-foreground: #f4f4f5;
+  
+  --muted: #94949e;
+  --muted-foreground: #a1a1aa;
+  
+  --accent: #3b82f6;
+  --accent-foreground: #ffffff;
+  
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  
+  --card: #121215;
+  --card-foreground: #f4f4f5;
+}
+
+html, body {
+  overflow-x: clip;
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Floor 5: Display heads carry overflow-wrap */
+h1, h2, h3, h4, h5, h6 {
+  overflow-wrap: break-word;
+  min-width: 0;
+  letter-spacing: -0.02em;
+}
+
+/* Floor 6: Focus visible appears instantly */
+:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+/* Floor 2: Transition rules - never transition: all */
+button, a, input, select, textarea {
+  transition-property: color, background-color, border-color, opacity;
+  transition-duration: 150ms;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Floor 7: Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

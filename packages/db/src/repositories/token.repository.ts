@@ -1,5 +1,5 @@
 import { randomBytes } from "node:crypto";
-import { prisma } from "../client.js";
+import { prisma } from "../client";
 
 export class ApiTokenRepository {
   static async createToken(userId: string, name = "Chrome Extension", expiresInDays = 30) {

@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
-import { prisma } from "../client.js";
-import { DocumentChunkRepository } from "../repositories/chunk.repository.js";
-import { UserRepository } from "../repositories/user.repository.js";
-import { embeddingsClient } from "../../../ai/src/index.js";
-import { verifyQuoteInSource, verifyAndFilterQuotes } from "../../../ai/src/index.js";
+import { prisma } from "../client";
+import { DocumentChunkRepository } from "../repositories/chunk.repository";
+import { UserRepository } from "../repositories/user.repository";
+import { embeddingsClient } from "../../../ai/src/index";
+import { verifyQuoteInSource, verifyAndFilterQuotes } from "../../../ai/src/index";
 
 describe("Phase 1 Smoke Test: Embed, Store, and Hybrid Search", () => {
   let testUserId: string;
